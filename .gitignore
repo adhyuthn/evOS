@@ -4,3 +4,4 @@ xfs-interface/
 xsm/
 disk.xfs
 Makefile
+dojo/
