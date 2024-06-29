@@ -1,0 +1,11 @@
+alias num R0;
+alias res R1;
+res = 0;
+num = 1;
+
+while (num <= 20) do
+    res = res + num*num;
+    num = num + 1;
+endwhile;
+
+print res;
