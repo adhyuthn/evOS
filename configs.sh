@@ -6,10 +6,12 @@ EXPOS_DIR=~/PROJ/evOS
 alias XCD='cd $EXPOS_DIR'
 alias XFS='cd $EXPOS_DIR/xfs-interface/ && ./xfs-interface && cd -'
 
+
 function SPL() {
+    ABS_PATH=$(realpath -e $1)
     cd $EXPOS_DIR/spl
-    echo $1
-    ./spl $1
+    echo Input Path: $ABS_PATH
+    ./spl $ABS_PATH
     cd -
 }
 
