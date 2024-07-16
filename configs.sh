@@ -28,3 +28,11 @@ function XMEM() {
         watch -n 1 "cat $EXPOS_DIR/xsm/mem"
     fi
 }
+
+function XGREP() {
+    if [ $1 = "-f" ]; then
+        grep -niR "$2" $EXPOS_DIR/exposnitc.github.io
+        return 0
+    fi
+        grep -niR --color=always "$1" $EXPOS_DIR/exposnitc.github.io | sed 's/<[^>]*>//g'
+}
