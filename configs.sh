@@ -4,11 +4,27 @@
 
 EXPOS_DIR=~/PROJ/evOS
 alias XCD='cd $EXPOS_DIR'
-alias XFS='cd $EXPOS_DIR/xfs-interface/ && ./xfs-interface && cd -'
 
 if [ ! -d "$EXPOS_DIR/exposnitc.github.io" ]; then
     wget --recursive https://exposnitc.github.io --reject '*.js,*.css,*.ico,*.txt,*.gif,*.jpg,*.jpeg,*.png,*.mp3,*.pdf,*.tgz,*.flv,*.avi,*.mpeg,*.iso' --ignore-tags=img,link,script --header="Accept: text/html"
 fi
+
+function XFS() {
+    if [[ $1 == "-l" || $1 == "--load" ]]; then
+        XFS_EXEC_LIST=$(realpath -e $2)
+        cd $EXPOS_DIR/xfs-interface
+        echo "Executing $XFS_EXEC_LIST"
+        cat $XFS_EXEC_LIST
+        echo
+        cat $XFS_EXEC_LIST | xargs -I {} ./xfs-interface {}
+        cd - > /dev/null
+    else
+        cd $EXPOS_DIR/xfs-interface
+        ./xfs-interface
+    cd - > /dev/null
+    fi
+
+}
 
 function SPL() {
     ABS_PATH=$(realpath -e $1)
