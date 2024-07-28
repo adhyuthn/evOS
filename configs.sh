@@ -14,9 +14,9 @@ function XFS() {
         XFS_EXEC_LIST=$(realpath -e $2)
         cd $EXPOS_DIR/xfs-interface
         echo "Executing $XFS_EXEC_LIST"
-        cat $XFS_EXEC_LIST
-        echo
-        cat $XFS_EXEC_LIST | xargs -I {} ./xfs-interface {}
+        cat $XFS_EXEC_LIST | grep -v "^#"
+        echo "--------------------------"
+        cat $XFS_EXEC_LIST | grep -v "^#" | xargs -I {} ./xfs-interface {}
         cd - > /dev/null
     else
         cd $EXPOS_DIR/xfs-interface
