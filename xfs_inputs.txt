@@ -1,0 +1,7 @@
+fdisk
+load --os /home/evoprime/Athena/PROJ/evOS/stages/stage_9/os_startup.xsm
+load --init /home/evoprime/Athena/PROJ/evOS/stages/stage_9/user_prog.xsm
+load --library /home/evoprime/Athena/PROJ/evOS/expl/library.lib
+load --int=10 /home/evoprime/Athena/PROJ/evOS/stages/stage_9/halt_prog.xsm
+load --int=timer /home/evoprime/Athena/PROJ/evOS/stages/stage_9/timer.xsm
+load --exhandler /home/evoprime/Athena/PROJ/evOS/stages/stage_9/halt_prog.spl

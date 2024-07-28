@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # This is a bunch of commands to automate my workflow
+# Most expos tools should be run from their own directory only
 
 EXPOS_DIR=~/PROJ/evOS
 alias XCD='cd $EXPOS_DIR'
@@ -14,7 +15,7 @@ function XFS() {
         XFS_EXEC_LIST=$(realpath -e $2)
         cd $EXPOS_DIR/xfs-interface
         echo "Executing $XFS_EXEC_LIST"
-        cat $XFS_EXEC_LIST | grep -v "^#"
+        cat $XFS_EXEC_LIST | grep -v "^#"       # Treat lines starting with # as a comment
         echo "--------------------------"
         cat $XFS_EXEC_LIST | grep -v "^#" | xargs -I {} ./xfs-interface {}
         cd - > /dev/null
@@ -23,7 +24,6 @@ function XFS() {
         ./xfs-interface
     cd - > /dev/null
     fi
-
 }
 
 function SPL() {
