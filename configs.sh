@@ -51,7 +51,11 @@ function XMEM() {
 function XGREP() {
     if [ $1 = "-f" ]; then
         grep -niR "$2" $EXPOS_DIR/exposnitc.github.io
-        return 0
-    fi
+    elif [[ $1 == "-fo" ]]; then
+        find $EXPOS_DIR/exposnitc.github.io/ | grep "$2"
+    elif [[ $1 == "-g" ]]; then
+        firefox "https://www.google.com/search?q=site:exposnitc.github.io $2"
+    else
         grep -niR --color=always "$1" $EXPOS_DIR/exposnitc.github.io | sed 's/<[^>]*>//g'
+    fi
 }
