@@ -15,7 +15,7 @@ function XFS() {
         XFS_EXEC_LIST=$(realpath -e $2)
         cd $EXPOS_DIR/xfs-interface
         echo "Executing $XFS_EXEC_LIST"
-        cat $XFS_EXEC_LIST | grep -v "^#"       # Treat lines starting with # as a comment
+        cat $XFS_EXEC_LIST | grep -v "^#"   # Treat lines starting with # as a comment
         echo "--------------------------"
         cat $XFS_EXEC_LIST | grep -v "^#" | xargs -I {} ./xfs-interface {}
         cd - > /dev/null
