@@ -14,6 +14,10 @@ loadi(23,36);
 loadi(2,15);
 loadi(3,16);
 
+// load writer interrupt
+loadi(16,29);
+loadi(17,30);
+
 // INIT PAGE TABLES
 PTBR = PAGE_TABLE_BASE;
 PTLR = 10;
@@ -45,6 +49,22 @@ PTLR = 10;
 [PTBR+17] = "0110";
 [PTBR+18] = 77;
 [PTBR+19] = "0110";
+
+// Setup Process Table
+// User Area
+[PROCESS_TABLE + 11] = 80;
+
+// PID of process = index
+[PROCESS_TABLE + 1] = 0;
+
+// System status table
+// PID of currrent process
+[SYSTEM_STATUS_TABLE + 1] = 0;
+
+
+
+
+
 
 SP = 8*512;
 [76*512] = [65 * 512 + 1];
