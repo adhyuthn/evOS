@@ -59,3 +59,12 @@ function XGREP() {
         grep -niR --color=always "$1" $EXPOS_DIR/exposnitc.github.io | sed 's/<[^>]*>//g'
     fi
 }
+
+function XPHY() {
+    logical_address=$2
+    while IFS= read -r line
+    do
+        printf "%10s : %s\n" "${logical_address}" "$line"
+        logical_address=$(( $logical_address + 2 ))
+    done < $1
+}
