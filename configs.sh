@@ -62,9 +62,16 @@ function XGREP() {
 
 function XPHY() {
     logical_address=$2
-    while IFS= read -r line
+    while IFS= read -r xphy_line
     do
-        printf "%10s : %s\n" "${logical_address}" "$line"
-        logical_address=$(( $logical_address + 2 ))
+        printf "%10s : %s\n" "${logical_address}" "$xphy_line"
+        echo ${xphy_line} | grep "^[0-9]" > /dev/null
+        local return_code=$?
+        if [[ $return_code == 0 ]];
+        then
+            logical_address=$(( ${logical_address} + 1 ))
+        else
+            logical_address=$(( ${logical_address} + 2 ))
+        fi
     done < $1
 }
