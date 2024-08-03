@@ -10,6 +10,7 @@ userSP = SP;
 // Switcht to the kernel stack of the process
 SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
 
+// In Kernel mode. Do manual HAT
 alias physicalPageNum R1;
 alias offset R2;
 alias fileDescPhysicalAddr R3;
@@ -18,6 +19,7 @@ offset = (userSP - 4) % 512;
 fileDescPhysicalAddr = (physicalPageNum * 512) + offset;
 alias fileDescriptor R4;
 fileDescriptor=[fileDescPhysicalAddr];
+
 
 if (fileDescriptor != -2)
 then
@@ -29,10 +31,10 @@ else
     alias word R4;
     word = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
     print word;
+    // set successfull return val
     alias physicalAddrRetVal R6;
     physicalAddrRetVal = ([PTBR + 2 * (userSP - 1)/ 512] * 512) + ((userSP - 1) % 512);
     [physicalAddrRetVal] = 0;
-
 endif;
 
 SP = userSP;
