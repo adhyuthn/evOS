@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# This is a bunch of commands to automate my workflow
-# Most expos tools should be run from their own directory only
+# A bunch of commands to make life easier
 
 EXPOS_DIR=~/PROJ/evOS
 alias XCD='cd $EXPOS_DIR'
@@ -62,9 +61,9 @@ function XGREP() {
 
 function XPHY() {
     logical_address=$2
-    while IFS= read -r xphy_line
+    while read -r xphy_line
     do
-        printf "%10s : %s\n" "${logical_address}" "$xphy_line"
+        printf "%10s ┃ %s\n" "${logical_address}" "$xphy_line"
         echo ${xphy_line} | grep "^[0-9]" > /dev/null
         local return_code=$?
         if [[ $return_code == 0 ]];
