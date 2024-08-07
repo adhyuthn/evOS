@@ -33,6 +33,14 @@ function SPL() {
     cd -
 }
 
+function EXPL() {
+    ABS_PATH=$(realpath -e $1)
+    cd $EXPOS_DIR/expl
+    echo Input Path: $ABS_PATH
+    ./expl $ABS_PATH
+    cd -
+}
+
 function XSM() {
     cd $EXPOS_DIR/xsm
     ./xsm $@

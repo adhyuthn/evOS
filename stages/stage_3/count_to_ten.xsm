@@ -1,9 +1,0 @@
-MOV R0, 1
-MOV R1, 20
-LOOP:
-    PORT P1, R0
-    OUT
-    INR R0
-    DCR R1
-    JNZ R1, LOOP
-HALT
