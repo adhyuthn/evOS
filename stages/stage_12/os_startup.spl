@@ -2,7 +2,7 @@
 loadi(63,13);
 loadi(64,14);
 
-// load os startup code
+// load init code
 loadi(65,7);
 loadi(66,8);
 

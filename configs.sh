@@ -82,3 +82,6 @@ function XPHY() {
         fi
     done < $1
 }
+
+export -f SPL
+export -f EXPL

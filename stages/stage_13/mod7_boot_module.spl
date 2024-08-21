@@ -14,10 +14,18 @@ loadi(23,36);
 loadi(2,15);
 loadi(3,16);
 
-// INIT PAGE TABLES
-PTBR = PAGE_TABLE_BASE;
+// load writer interrupt
+loadi(16,29);
+loadi(17,30);
+
+// load timer interrupt
+loadi(4, 17);
+loadi(5, 18);
+
+PTBR = PAGE_TABLE_BASE + 20;
 PTLR = 10;
 
+//INIT's PAGE TABLE
 // user Lib space
 [PTBR+0] = 63;
 [PTBR+1] = "0100";
@@ -46,7 +54,23 @@ PTLR = 10;
 [PTBR+18] = 77;
 [PTBR+19] = "0110";
 
-SP = 8*512;
-[76*512] = [65 * 512 + 1];
+// Setup Process Table
+// For INIT process
+// PID of process
+[PROCESS_TABLE + 17] = 1;
+// User Area
+[PROCESS_TABLE + 27] = 80;
+// STATE of the INIT process state is set to RUNNING
+[PROCESS_TABLE + 20] = CREATED;
+// UPTR
+[PROCESS_TABLE + 29] = 8*512;
+// KPTR of IDLE
+[PROCESS_TABLE + 28] = 0;
+// PTBR
+[PROCESS_TABLE + 30] = PAGE_TABLE_BASE + 20;
+// PTLR
+[PROCESS_TABLE + 31] = 10;
 
-ireturn;
+[76 * 512] = [65 * 512 + 1];
+
+return;
