@@ -61,11 +61,6 @@ PTLR = 10;
 // PID of currrent process
 [SYSTEM_STATUS_TABLE + 1] = 0;
 
-
-
-
-
-
 SP = 8*512;
 [76*512] = [65 * 512 + 1];
 
