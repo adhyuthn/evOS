@@ -1,6 +1,6 @@
 ## evOS - evo's eXpOS
 
-eXpOS is an educational operting system designed for the operating Systems Laboratory Course at NIT Calicut.
+eXpOS is an attempt to create an operting system from scratch. Designed for the [Operating Systems Laboratory Course](https://exposnitc.github.io/) at NIT Calicut.
 
 ---
 
