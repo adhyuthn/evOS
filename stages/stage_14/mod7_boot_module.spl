@@ -22,8 +22,21 @@ loadi(17,30);
 loadi(4, 17);
 loadi(5, 18);
 
+// load MOD5 - Scheduler
+loadi(50,63);
+loadi(51,64);
 // load PROC2 code
 loadi(83, 69);
+
+
+// Initialize by setting STATE field of all PTEs to TERMINATED
+alias proc R0;
+proc = 0;
+while(proc < MAX_PROC_NUM) do 
+    [PROCESS_TABLE + proc * 16 + 4 ] = TERMINATED;
+    proc = proc + 1;
+endwhile;
+
 
 // INIT PROCESS SETUP
 PTBR = PAGE_TABLE_BASE + 20;

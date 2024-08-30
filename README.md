@@ -5,3 +5,4 @@ eXpOS is an attempt to create an operting system from scratch. Designed for the 
 ---
 
 `configs.sh` contains some functions that eased my way around navigating the the tools.
+`vim/` contains syntax files for XSM, SPL and EXPL.

@@ -22,8 +22,24 @@ loadi(17,30);
 loadi(4, 17);
 loadi(5, 18);
 
+// load MOD5 - Scheduler
+loadi(50,63);
+loadi(51,64);
+
 // load PROC2 code
 loadi(83, 69);
+
+// load PROC3 code
+loadi(89, 70);
+
+// Initialize by setting STATE field of all PTEs to TERMINATED
+alias proc R0;
+proc = 0;
+while(proc < MAX_PROC_NUM) do 
+    [PROCESS_TABLE + proc * 16 + 4 ] = TERMINATED;
+    proc = proc + 1;
+endwhile;
+
 
 // INIT PROCESS SETUP
 PTBR = PAGE_TABLE_BASE + 20;
@@ -128,5 +144,57 @@ PTLR = 10;
 [PROCESS_TABLE + 47] = 10;
 
 [86 * 512] = [83 * 512 + 1];
+
+// PROC3 PROCEESS SETUP
+
+PTBR = PAGE_TABLE_BASE + 60;
+PTLR = 10;
+
+//PROC3's PAGE TABLE
+// user Lib space
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+// user Heap space
+[PTBR+4] = 90;
+[PTBR+5] = "0110";
+[PTBR+6] = 91;
+[PTBR+7] = "0110";
+
+// user Code space
+[PTBR+8] = 89;
+[PTBR+9] = "0100";
+[PTBR+10] = -1;
+[PTBR+11] = "0000";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+// user Stack space
+[PTBR+16] = 92;
+[PTBR+17] = "0110";
+[PTBR+18] = 93;
+[PTBR+19] = "0110";
+
+// Setup Process Table
+// PID of process
+[PROCESS_TABLE + 49] = 3;
+// User Area
+[PROCESS_TABLE + 59] = 94;
+// STATE of the INIT process state is set to RUNNING
+[PROCESS_TABLE + 52] = CREATED;
+// UPTR
+[PROCESS_TABLE + 61] = 8*512;
+// KPTR of IDLE
+[PROCESS_TABLE + 60] = 0;
+// PTBR
+[PROCESS_TABLE + 62] = PAGE_TABLE_BASE + 60;
+// PTLR
+[PROCESS_TABLE + 63] = 10;
+
+[92 * 512] = [89 * 512 + 1];
 
 return;

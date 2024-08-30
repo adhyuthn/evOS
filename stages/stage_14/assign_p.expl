@@ -1,0 +1,31 @@
+int main()
+{
+decl
+    int cntr, temp ,num, isprime;
+enddecl
+begin
+    cntr = 0;
+    temp = 0;
+    isprime = 0;
+    num=2;
+    while ( num <= 100 ) do
+        cntr = 2;
+        isprime = 1;
+        temp = cntr * cntr;
+        while ( temp <= num ) do
+            temp = num % cntr;
+            if ( temp == 0) then 
+                isprime = 0;
+                break;
+            endif;
+            cntr = cntr + 1;
+            temp = cntr * cntr;
+        endwhile;
+        if (isprime ==1 ) then 
+            temp = exposcall("Write", -2, num);
+        endif;
+        num = num + 1;
+    endwhile;
+    return 0;
+end
+}
