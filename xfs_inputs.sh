@@ -11,4 +11,5 @@ load --module 7 /home/evoprime/Athena/PROJ/evOS/stages/stage_14/assign_mod7_boot
 load --module 5 /home/evoprime/Athena/PROJ/evOS/stages/stage_14/mod5_scheduler_module.xsm
 load --idle /home/evoprime/Athena/PROJ/evOS/stages/stage_14/idle_process.xsm
 load --exec /home/evoprime/Athena/PROJ/evOS/stages/stage_14/even_100.xsm
-load --exec /home/evoprime/Athena/PROJ/evOS/stages/stage_14/assign_p.xsm
+load --exec /home/evoprime/Athena/PROJ/evOS/stages/dojo/simple.xsm
+

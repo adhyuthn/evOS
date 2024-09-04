@@ -75,14 +75,14 @@ PTLR = 10;
 // For INIT process
 // PID of process
 [PROCESS_TABLE + 17] = 1;
-// User Area
-[PROCESS_TABLE + 27] = 80;
 // STATE of the INIT process state is set to RUNNING
 [PROCESS_TABLE + 20] = CREATED;
-// UPTR
-[PROCESS_TABLE + 29] = 8*512;
+// User Area
+[PROCESS_TABLE + 27] = 80;
 // KPTR of IDLE
 [PROCESS_TABLE + 28] = 0;
+// UPTR
+[PROCESS_TABLE + 29] = 8*512;
 // PTBR
 [PROCESS_TABLE + 30] = PAGE_TABLE_BASE + 20;
 // PTLR
@@ -127,14 +127,14 @@ PTLR = 10;
 // Setup Process Table
 // PID of process
 [PROCESS_TABLE + 33] = 2;
-// User Area
-[PROCESS_TABLE + 43] = 88;
 // STATE of the INIT process state is set to RUNNING
 [PROCESS_TABLE + 36] = CREATED;
-// UPTR
-[PROCESS_TABLE + 45] = 8*512;
+// User Area
+[PROCESS_TABLE + 43] = 88;
 // KPTR of IDLE
 [PROCESS_TABLE + 44] = 0;
+// UPTR
+[PROCESS_TABLE + 45] = 8*512;
 // PTBR
 [PROCESS_TABLE + 46] = PAGE_TABLE_BASE + 40;
 // PTLR

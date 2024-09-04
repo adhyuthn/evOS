@@ -5,10 +5,6 @@
 EXPOS_DIR=~/PROJ/evOS
 alias XCD='cd $EXPOS_DIR'
 
-if [ ! -d "$EXPOS_DIR/exposnitc.github.io" ]; then
-    wget --recursive https://exposnitc.github.io --reject '*.js,*.css,*.ico,*.txt,*.gif,*.jpg,*.jpeg,*.png,*.mp3,*.pdf,*.tgz,*.flv,*.avi,*.mpeg,*.iso' --ignore-tags=img,link,script --header="Accept: text/html"
-fi
-
 function XFS() {
     if [[ $1 == "-l" || $1 == "--load" ]]; then
         XFS_EXEC_LIST=$(realpath -e $2)
@@ -26,19 +22,35 @@ function XFS() {
 }
 
 function SPL() {
-    ABS_PATH=$(realpath -e $1)
-    cd $EXPOS_DIR/spl
-    echo Input Path: $ABS_PATH
-    ./spl $ABS_PATH
-    cd -
+    if [[ -d $1 ]]; then
+        echo "Compiling all spl programs"
+        ABS_PATH=$(realpath -e $1)
+        cd $EXPOS_DIR/spl
+        find $ABS_PATH | grep .spl | xargs -I {} sh -c 'echo "Compiling: "{}"" && ./spl "{}" && echo' 
+        cd -
+    else
+        ABS_PATH=$(realpath -e $1)
+        cd $EXPOS_DIR/spl
+        echo Input Path: $ABS_PATH
+        ./spl $ABS_PATH
+        cd -
+    fi
 }
 
 function EXPL() {
-    ABS_PATH=$(realpath -e $1)
-    cd $EXPOS_DIR/expl
-    echo Input Path: $ABS_PATH
-    ./expl $ABS_PATH
-    cd -
+    if [[ -d $1 ]]; then
+        echo "Compiling all expl programs"
+        ABS_PATH=$(realpath -e $1)
+        cd $EXPOS_DIR/expl
+        find $ABS_PATH | grep .expl | xargs -I {} sh -c 'echo "Compiling: "{}"" && ./expl "{}" && echo' 
+        cd -
+    else
+        ABS_PATH=$(realpath -e $1)
+        cd $EXPOS_DIR/expl
+        echo Input Path: $ABS_PATH
+        ./expl $ABS_PATH
+        cd -
+    fi
 }
 
 function XSM() {
