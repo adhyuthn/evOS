@@ -1,0 +1,25 @@
+alias functionNum R1;
+alias currentPID R2;
+alias returnValue R7;
+
+if (functionNum == 3) then
+    multipush(R1, R2);
+    R1 = ACQUIRE_TERMINAL;
+    R2 = currentPID;
+    call MOD_0;
+    multipop(R1, R2);
+    print R3;
+
+    multipush(R1, R2);
+    R1 = RELEASE_TERMINAL;
+    R2 = currentPID;
+    call MOD_0;
+    returnValue = R0;
+    if (returnValue == -1) then 
+        print "ERROR";
+    endif;
+    multipop(R1, R2);
+    return;
+else 
+    return;
+endif;
