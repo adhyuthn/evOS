@@ -1,0 +1,13 @@
+int main()
+{
+decl
+    int temp,num1, num2;
+enddecl
+begin
+    num1=4;
+    temp = exposcall ( "Write", -2, "First");
+    temp = exposcall ( "Read" , -1, num1 );
+    temp = exposcall ( "Write", -2, num1 );
+    return 0;
+end
+}

@@ -1,0 +1,19 @@
+alias current_pid R0;
+alias process_table_entry R1;
+
+current_pid = [SYSTEM_STATUS_TABLE + 1];
+
+process_table_entry = PROCESS_TABLE + 16 * current_pid;
+[process_table_entry + 4] = TERMINATED;
+
+alias pid R2;
+
+pid = 1;
+while (pid < 16) do
+    if ([PROCESS_TABLE + 16 * pid + 4] != TERMINATED) then
+        call MOD_5;
+    endif;
+    pid = pid + 1;
+endwhile;
+
+halt;

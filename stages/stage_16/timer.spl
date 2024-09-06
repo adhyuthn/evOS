@@ -1,0 +1,24 @@
+// print "----------";
+// print "TIMER";
+// print "Current PID = ";
+// print [SYSTEM_STATUS_TABLE + 1];
+// print "----------";
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = SP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+backup;
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 4] = READY;
+call MOD_5;
+
+// ISR finished
+restore;
+
+// Puttting it here, strictly as per timer interrupt handler guideline
+SP = [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13];
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 9] = 0;
+
+ireturn;
