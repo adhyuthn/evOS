@@ -1,12 +1,14 @@
 ## evOS - evo's eXpOS
 
-eXpOS is an attempt to create an operting system from scratch. Designed for the [Operating Systems Laboratory Course](https://exposnitc.github.io/) at NIT Calicut.
+eXpOS is an attempt to create an operting system from scratch for a hypothetical `XSM` architecture. Designed as per the [Operating Systems Laboratory Course](https://exposnitc.github.io/) at NIT Calicut.
+`XSM` is a Assembly like language for writing programs.
+`SPL` is an abstraction for `XSM`. It provides simple constructs like loops and aliasing.
+`EXPL` is a high level language for writing user programs. Compiles to XSM instructions.
 
 ---
 
-> [!TOOLS]
-> `configs.sh` contains some functions that eased my way around navigating the the tools.
-> `vim/` contains syntax files for XSM, SPL and EXPL.
+> - `configs.sh` contains some functions that eased my way around navigating the the tools.
+> - `vim/` contains syntax files for XSM, SPL and EXPL.
 
 ---
 
