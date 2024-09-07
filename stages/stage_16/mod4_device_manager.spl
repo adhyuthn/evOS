@@ -29,9 +29,9 @@ else
         multipush(R1, R2, R3);
         call MOD_5;
         multipop(R1, R2, R3);
-        alias wordAddr R3;
-        wordAddr = [[PTBR + 2 * (wordAddr) / 512] * 512 + (wordAddr) % 512];
-        [wordAddr] = [PROCESS_TABLE + currentPID * 16 + 8];
+        breakpoint;
+        // The Address in R3 is logical
+        [[PTBR + 2 * (R3 / 512)] * 512 + (R3 % 512)] = [PROCESS_TABLE + currentPID * 16 + 8];
         return;
     else
         return;

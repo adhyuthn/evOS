@@ -1,3 +1,4 @@
+// Change MODE to Read.
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 7;
 
 alias userSP R0;
@@ -11,32 +12,26 @@ userSP=SP;
 SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
 
 // In Kernel mode. Do manual HAT
-alias physicalPageNum R1;
-alias offset R2;
-alias fileDescPhysicalAddr R3;
-physicalPageNum = [PTBR + 2 * ((userSP - 4)/ 512)];
-offset = (userSP - 4) % 512;
-fileDescPhysicalAddr = (physicalPageNum * 512) + offset;
-alias fileDescriptor R4;
-fileDescriptor=[fileDescPhysicalAddr];
-alias physicalAddrRetVal R5;
+alias fileDescriptor R2;
+fileDescriptor=[[PTBR + 2 * ((userSP - 4)/ 512)] * 512 + (userSP - 4) % 512 ];
+alias physicalAddrRetVal R3;
 physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
-
 
 if (fileDescriptor != -1) then
     [physicalAddrRetVal] = -1;
 else
-    multipush(R0, R1, R2, R3, R4, R5);
+    multipush(R0, R1, R2, R3);
     R1 = TERMINAL_READ;
     R2 = [SYSTEM_STATUS_TABLE + 1];
-    // logical Word Address
-    R3 = userSP - 3;
+    // logical Address of Word- Read Stage INstruction
+    R3 = [([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512)];
     call MOD_4;
-    multipop(R0, R1, R2, R3, R4, R5);
+    multipop(R0, R1, R2, R3);
     [physicalAddrRetVal] = 0;
 endif;
 
+SP = userSP;
 //MODE FLAG
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
-SP = userSP;
+
 ireturn;

@@ -1,13 +1,25 @@
 int main()
 {
 decl
-    int temp,num1, num2;
+    int a, b, temp;
 enddecl
 begin
-    num1=4;
-    temp = exposcall ( "Write", -2, "First");
-    temp = exposcall ( "Read" , -1, num1 );
-    temp = exposcall ( "Write", -2, num1 );
+    a = 0;
+    b = 0;
+    temp = 0;
+    temp = exposcall ( "Write", -2, "a:" );
+    temp = exposcall ( "Read" , -1, a );
+    temp = exposcall ( "Write", -2, "b:" );
+    temp = exposcall ( "Read" , -1, b );
+    // https://cp-algorithms.com/algebra/euclid-algorithm.html
+    while (b != 0) do
+        a = a%b;
+        temp = b;
+        b = a;
+        a = temp;
+    endwhile;
+    temp = exposcall ( "Write", -2, "GCD: " );
+    temp = exposcall ( "Write", -2, a );
     return 0;
 end
 }
