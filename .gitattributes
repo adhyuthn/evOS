@@ -1,0 +1,4 @@
+*.expl linguist-language=C
+*.spl linguist-language=Assembly
+*.xsm linguist-language=Assembly
+
