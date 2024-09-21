@@ -1,0 +1,121 @@
+// MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = INT_EXEC;
+
+alias userSP R0;
+userSP = SP;
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+alias fileName R1;
+alias physicalAddrRetVal R2;
+alias inode R3;
+
+fileName = [([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+[physicalAddrRetVal] = -1;
+
+alias counter R4;
+counter = 0;
+
+// file existence and EXEC check
+while (counter < MAX_FILE_NUM) do 
+    if ([INODE_TABLE + counter*16 + 1] == fileName) then
+        if ([INODE_TABLE + counter*16] == EXEC ) then
+            inode = counter;
+            [physicalAddrRetVal] = 0;
+        endif;
+        break;
+    endif;
+    counter = counter + 1;
+endwhile;
+
+if ([physicalAddrRetVal] == -1) then 
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+    SP = userSP;
+    ireturn;
+endif;
+
+//Call EXIT_PROCESS
+multipush(R0, R1, R2, R3);
+R1 = EXIT_PROCESS;
+R2 = [SYSTEM_STATUS_TABLE + 1];
+call MOD_1;
+multipop(R0, R1, R2, R3);
+
+// Reclaim User Page
+[MEMORY_FREE_LIST + [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]] = [MEMORY_FREE_LIST + [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]] + 1;
+[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+
+// SP = KPTR of new process
+SP = ([PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]) * 512 - 1;
+
+// Update STATE and INODE 
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 4] = RUNNING;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 7] = inode;
+
+// Allocate Pages
+
+multipush(R0, R1, R2, R3);
+
+// Library
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+// Heap 
+R1 = GET_FREE_PAGE;
+call MOD_2;
+[PTBR+4] = R0;
+[PTBR+5] = "0110";
+R1 = GET_FREE_PAGE;
+call MOD_2;
+[PTBR+6] = R0;
+[PTBR+7] = "0110";
+
+// Stack
+R1 = GET_FREE_PAGE;
+call MOD_2;
+[PTBR+16] = R0;
+[PTBR+17] = "0110";
+R1 = GET_FREE_PAGE;
+call MOD_2;
+[PTBR+18] = R0;
+[PTBR+19] = "0110";
+
+multipop(R0, R1, R2, R3);
+
+// Code 
+// R4, R0,  R3, R2
+counter = 0;
+while (counter < 4) do
+    if ([INODE_TABLE + inode * 16 + 8 + counter] != -1) then
+        multipush(R0, R2, R4);
+        multipush(R3);
+        R1 = GET_FREE_PAGE;
+        call MOD_2;
+        [PTBR+8+counter*2] = R0;
+        [PTBR+9+counter*2] = "0100";
+        // load blocks from disk to memory
+        multipop(R3);
+        loadi(R0,[INODE_TABLE + inode * 16 + 8 + counter]);
+        multipop(R0, R2, R4);
+    else 
+        [PTBR+8+counter*2] = -1;
+        [PTBR+9+counter*2] = "0000";
+    endif;
+    counter = counter + 1;
+endwhile;
+
+// Update IP and SP
+SP = 8 * 512;
+[[PTBR+16] * 512] = [[PTBR+8] * 512 + 1];
+
+// MODE
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+ireturn;
