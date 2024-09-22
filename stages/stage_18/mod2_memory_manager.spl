@@ -1,0 +1,49 @@
+alias functionNum R1;
+
+if (functionNum == GET_FREE_PAGE) then
+    alias currentPID R2;
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
+
+    // See if any page is free
+    [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
+    while ([SYSTEM_STATUS_TABLE + 3] == 0) do
+        [PROCESS_TABLE + currentPID*16 + 4] = WAIT_MEM;
+        multipush(R1, R2);
+        call MOD_5;
+        multipop(R1, R2);
+    endwhile;
+    [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
+    [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+    
+    // find a free Page
+    alias counter R3;
+    counter = 0;
+    while (counter < MAX_MEM_PAGE) do
+        if ([MEMORY_FREE_LIST + counter] == 0) then 
+            [MEMORY_FREE_LIST + counter] = 1;
+            R0 = counter;
+            break;
+        endif;
+        counter = counter + 1;
+    endwhile;
+    return;
+endif;
+
+if (functionNum == RELEASE_PAGE) then
+    alias pageNum R2;
+    [MEMORY_FREE_LIST + pageNum] = [MEMORY_FREE_LIST + pageNum] - 1;
+    if ([MEMORY_FREE_LIST + pageNum] == 0) then 
+        [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] + 1;
+    endif;
+    
+    alias counter R2;
+    counter = 0;
+    while (counter < MAX_PROC_NUM) do 
+        if ([PROCESS_TABLE + counter*16 + 4] == WAIT_MEM) then
+            // I don't get this. Why are you not checking if MEM_FREE is not 0;
+            [PROCESS_TABLE + counter*16 + 4] = READY;
+        endif;
+        counter = counter + 1;
+    endwhile;
+    return;
+endif;
