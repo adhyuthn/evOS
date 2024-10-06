@@ -48,6 +48,7 @@ multipop(R0, R1, R2, R3);
 
 // Reclaim User Page
 alias userAreaPageNum R5;
+userAreaPageNum = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11];
 [MEMORY_FREE_LIST + userAreaPageNum] = [MEMORY_FREE_LIST + userAreaPageNum] + 1;
 [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
 // Init Per-Process Table
