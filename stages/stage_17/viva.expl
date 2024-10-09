@@ -1,0 +1,21 @@
+int main()
+{
+decl
+    int temp,num;
+    str progPath;
+
+enddecl
+begin
+    num=0;
+    while ( num <= 100 ) do
+         temp = exposcall ( "Write" , -2, num );
+         num = num + 2;
+    endwhile;
+    temp = exposcall ("Write", -2, "user@evos");
+    temp = exposcall ("Read", -1, progPath);
+    temp = exposcall ("Exec", progPath);
+    temp = exposcall ("Write", -2, "Something BAd");
+
+    return 0;
+end
+}
