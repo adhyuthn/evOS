@@ -1,0 +1,93 @@
+print "-------";
+print "EXHANDLER";
+// Change MODE to Interrupt.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = -1;
+
+alias userSP R0;
+userSP=SP;
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+backup;
+multipush(EIP);
+
+alias currentPID R3;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+
+if (EC != 0 || 
+    userSP == PTLR * 512 - 1) then
+    if (EC == 1) then
+        print "Bad Instr.";
+    else
+        if (EC == 2) then
+            print "Bad Mem.";
+        else
+            if (EC == 3) then
+                print "Bad AL";
+            else
+                    print "uSP OV";
+                    print userSP;
+            endif;
+        endif;
+    endif;
+    R1 = EXIT_PROCESS;
+    R2 = currentPID;
+    print "-------";
+    call MOD_1;
+    call MOD_5;
+endif;
+
+alias blockNum R2;    
+alias pageTable R4;
+blockNum = [DISK_MAP_TABLE + currentPID * 10 + EPN];
+pageTable = PAGE_TABLE_BASE + currentPID * 20;
+
+// Code page check
+if (EPN >= 4 && EPN <= 7 ) then 
+    print "CP request";
+    breakpoint;
+    multipush(R0, R1, R2, R3);
+    multipush(R4);
+    R2 = blockNum;
+    R1 = GET_CODE_PAGE;
+    call MOD_2;
+    breakpoint;
+    multipop(R4);
+    [pageTable + EPN * 2] = R0;
+    [pageTable + EPN * 2 + 1] = "1100";
+    multipop(R0, R1, R2, R3);
+else
+
+// Heap page check
+// It's fine to check for 3 too..right?
+if (EPN == 2 || EPN == 3) then
+    multipush(R0, R2, R3, R4);
+    R1 = GET_FREE_PAGE;
+    call MOD_2;
+    [PTBR + 4] = R0;
+    [PTBR + 5] = "1110";
+    R1 = GET_FREE_PAGE;
+    call MOD_2;
+    [PTBR + 6] = R0;
+    [PTBR + 7] = "1110";
+    multipop(R0, R2, R3, R4);
+endif;
+endif;
+
+// Change MODE
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+multipop(EIP);
+restore;
+
+SP = [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13];
+SP = SP + 1;
+
+// EIP stored @ userSP + 1
+[[PTBR + 2 * (SP / 512)] * 512 + (SP % 512)] = EIP;
+print "-------";
+
+ireturn;

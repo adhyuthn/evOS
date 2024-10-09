@@ -17,5 +17,4 @@ load --module 5     /home/evoprime/Athena/PROJ/evOS/stages/stage_19/mod5_schedul
 load --module 7     /home/evoprime/Athena/PROJ/evOS/stages/stage_19/mod7_boot_module.xsm
 load --init         /home/evoprime/Athena/PROJ/evOS/stages/stage_19/init_shell.xsm
 load --idle         /home/evoprime/Athena/PROJ/evOS/stages/stage_19/idle_process.xsm
-load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_17/chumma.xsm
-load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_19/llist.xsm
+load --exec         /home/evoprime/Athena/PROJ/evOS/stages/dojo/big.xsm
