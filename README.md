@@ -32,7 +32,7 @@ eXpOS is an attempt to create an operting system from scratch for a hypothetical
 - [x] [Stage 16]() : Console Input (6 Hours)
 - [x] [Stage 17]() : Program Loader (6 Hours)
 - [x] [Stage 18]() : Disk Interrupt Handler (6 Hours)
-- [ ] [Stage 19]() : Exception Handler (6 Hours)
+- [x] [Stage 19]() : Exception Handler (6 Hours)
 - [ ] [Stage 20]() : Process Creation and Termination (12 Hours)
 - [ ] [Stage 21]() : Process Synchronization (4 Hours)
 - [ ] [Stage 22]() : Semaphores (4 Hours)
