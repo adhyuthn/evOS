@@ -14,6 +14,10 @@ loadi(23,36);
 loadi(2,15);
 loadi(3,16);
 
+// load Timer interrupt
+loadi(4, 17);
+loadi(5, 18);
+
 // load writer interrupt
 loadi(16,29);
 loadi(17,30);
