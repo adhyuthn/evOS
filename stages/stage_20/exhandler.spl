@@ -29,7 +29,6 @@ if (EC != 0 ||
             endif;
         endif;
     endif;
-    breakpoint;
     R1 = EXIT_PROCESS;
     R2 = currentPID;
     print "-------";
@@ -61,12 +60,10 @@ if (EPN == 2) then
     multipush(R2, R3);
     R1 = GET_FREE_PAGE;
     call MOD_2;
-    breakpoint;
     [PTBR + 4] = R0;
     [PTBR + 5] = "1110";
     R1 = GET_FREE_PAGE;
     call MOD_2;
-    breakpoint;
     [PTBR + 6] = R0;
     [PTBR + 7] = "1110";
     multipop(R2, R3);

@@ -68,4 +68,20 @@ if(functionNum == FREE_PAGE_TABLE) then
     return;
 endif;
 
-
+if(functionNum == GET_PCB_ENTRY) then
+    alias index R1;
+    index = 0;
+    while (index < 16) do
+        if ([PROCESS_TABLE + index * 16 + 4] == TERMINATED) then
+            [PROCESS_TABLE + index * 16 + 1] = index;
+            [PROCESS_TABLE + index * 16 + 4] = ALLOCATED;
+            PTBR = PAGE_TABLE_BASE + 20 * index;
+            PTLR = 10;
+            R0 = index;
+            return;
+        endif;
+        index = index + 1;
+    endwhile;
+    R0 = -1;
+    return;
+endif;
