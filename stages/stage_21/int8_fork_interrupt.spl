@@ -1,0 +1,151 @@
+// MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = INT_FORK;
+
+alias userSP R0;
+userSP = SP;
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+alias childPID R1;
+alias parentPID R2;
+alias physicalAddrRetVal R3;
+alias counter R6;
+
+parentPID = [SYSTEM_STATUS_TABLE + 1];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+// Return a Free PCB index
+multipush(R0, R2, R3);
+R1 = GET_PCB_ENTRY;
+call PROCESS_MANAGER;
+childPID = R0;
+multipop(R0, R2, R3);
+if (childPID == -1) then
+    [physicalAddrRetVal] = -1;
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+    SP = userSP;
+    ireturn;
+endif;
+
+// Parent Heap check
+if ([PTBR + 4] == -1 || 
+    [PTBR + 6] == -1) then 
+    multipush(R0, R1, R2, R3);
+    R1 = GET_FREE_PAGE;
+    call MOD_2;
+    [PTBR + 4] = R0;
+    // Should this be "1110"? I don't think so. It is not accessed.
+    [PTBR + 5] = "0110";
+    R1 = GET_FREE_PAGE;
+    call MOD_2;
+    [PTBR + 6] = R0;
+    [PTBR + 7] = "0110";
+    multipop(R0, R1, R2, R3);
+endif;
+
+// Pages for child
+alias childPageTableBase R3;
+childPageTableBase = PAGE_TABLE_BASE + childPID * 20;
+// Allocate User and Kernel stacks
+multipush(R0, R2);
+multipush(R1);
+multipush(R3);
+R1 = GET_FREE_PAGE;
+call MOD_2;
+multipop(R3);
+[childPageTableBase + 16] = R0;
+multipush(R3);
+R1 = GET_FREE_PAGE;
+call MOD_2;
+multipop(R3);
+[childPageTableBase + 18] = R0;
+multipush(R3);
+R1 = GET_FREE_PAGE;
+call MOD_2;
+multipop(R3);
+multipop(R1);
+[PROCESS_TABLE + childPID * 16 + 11] = R0;
+multipop(R0, R2);
+
+// CHILD TABLE ENTRIES SETUP
+// PROCESS TABLE
+alias parentProcessTable R4;
+alias childProcessTable  R5;
+parentProcessTable = PROCESS_TABLE + parentPID * 16;
+childProcessTable  = PROCESS_TABLE + childPID  * 16;
+
+[childProcessTable +  0] = 0;
+[childProcessTable +  2] = parentPID;
+[childProcessTable +  3] = [parentProcessTable +  3];
+[childProcessTable +  4] = CREATED;
+[childProcessTable +  6] = [parentProcessTable +  6];
+[childProcessTable +  7] = [parentProcessTable +  7];
+[childProcessTable +  9] = 0;
+[childProcessTable + 10] = [parentProcessTable + 10];
+// User Area Page is filled above, rest in GET_PCB_ENTRY
+[childProcessTable + 12] = 0;
+[childProcessTable + 13] = [parentProcessTable + 13];
+
+// PER-PROCESS resource table
+alias parentPerProcessBase R4;
+alias childPerProcessBase  R5;
+parentPerProcessBase = [PROCESS_TABLE + parentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+childPerProcessBase  = [PROCESS_TABLE + childPID  * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+
+counter = 0;
+while (counter < 8) do
+    [childPerProcessBase + counter * 2] = [parentPerProcessBase + counter * 2];
+    counter = counter + 1;
+endwhile;
+
+// PER-PROCESS disk map table
+alias parentDiskBlockNum R4;
+alias childDiskBlockNum  R5;
+parentDiskBlockNum = DISK_MAP_TABLE + parentPID * 10;
+childDiskBlockNum  = DISK_MAP_TABLE + childPID  * 10;
+
+counter = 0;
+while (counter < 10) do
+    // Doubt - Why copy all? The Stacks of child is different from Parent
+    [childDiskBlockNum + counter] = [parentDiskBlockNum + counter];
+    counter = counter + 1;
+endwhile;
+
+// Page Table setup
+alias parentPageTableBase R4;
+parentPageTableBase = PTBR;
+childPageTableBase = PAGE_TABLE_BASE + childPID  * 20;
+
+counter = 0;
+while (counter <= 15) do
+    [childPageTableBase + counter] = [parentPageTableBase + counter];
+    [MEMORY_FREE_LIST + [parentPageTableBase + counter]] = [MEMORY_FREE_LIST + [parentPageTableBase + counter]] + 1;
+    counter = counter + 1;
+endwhile;
+// child's stack already paged
+[childPageTableBase + 17] = [parentPageTableBase + 17];
+[childPageTableBase + 19] = [parentPageTableBase + 19];
+// copy stack word by word
+counter = 0;
+while (counter < 512) do 
+    [[childPageTableBase + 16] * 512 + counter] = [[parentPageTableBase + 16] * 512 + counter];
+    [[childPageTableBase + 18] * 512 + counter] = [[parentPageTableBase + 18] * 512 + counter];
+    counter = counter + 1;
+endwhile;
+
+// BP
+[[PROCESS_TABLE + childPID * 16 + 11] * 512] = BP;
+
+// reutrn values
+[[parentPageTableBase + 2 * ((userSP - 1) / 512)] * 512 + ((userSP - 1) % 512)] = childPID;
+[[childPageTableBase  + 2 * ((userSP - 1) / 512)] * 512 + ((userSP - 1) % 512)] = 0;
+
+//MODE FLAG
+[PROCESS_TABLE + parentPID * 16 + 9] = 0;
+SP = userSP;
+breakpoint;
+ireturn;
