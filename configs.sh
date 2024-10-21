@@ -60,11 +60,7 @@ function XSM() {
 }
 
 function XMEM() {
-    if [ $# -ne 0 ]; then
-        watch -n 1 "sed -n -e 1p -e $(($1 + 2)),$(($2 + 2))p $EXPOS_DIR/xsm/mem"
-    else
-        watch -n 1 "cat $EXPOS_DIR/xsm/mem"
-    fi
+    nvim -R $EXPOS_DIR/xsm/mem
 }
 
 function XGREP() {

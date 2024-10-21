@@ -30,7 +30,6 @@ if (childPID == -1) then
     SP = userSP;
     ireturn;
 endif;
-[physicalAddrRetVal] = childPID;
 
 // Parent Heap check
 if ([PTBR + 4] == -1 || 
@@ -52,17 +51,25 @@ endif;
 alias childPageTableBase R3;
 childPageTableBase = PAGE_TABLE_BASE + childPID * 20;
 // Allocate User and Kernel stacks
-multipush(R0, R1, R2, R3);
+multipush(R0, R2);
+multipush(R1);
+multipush(R3);
 R1 = GET_FREE_PAGE;
 call MOD_2;
+multipop(R3);
 [childPageTableBase + 16] = R0;
+multipush(R3);
 R1 = GET_FREE_PAGE;
 call MOD_2;
+multipop(R3);
 [childPageTableBase + 18] = R0;
+multipush(R3);
 R1 = GET_FREE_PAGE;
 call MOD_2;
+multipop(R3);
+multipop(R1);
 [PROCESS_TABLE + childPID * 16 + 11] = R0;
-multipop(R0, R1, R2, R3);
+multipop(R0, R2);
 
 // CHILD TABLE ENTRIES SETUP
 // PROCESS TABLE
@@ -84,15 +91,14 @@ childProcessTable  = PROCESS_TABLE + childPID  * 16;
 [childProcessTable + 13] = [parentProcessTable + 13];
 
 // PER-PROCESS resource table
-alias parentUserAreaPageNum R4;
-alias childUserAreaPageNum  R5;
-parentUserAreaPageNum = [PROCESS_TABLE + parentPID * 16 + 11];
-childUserAreaPageNum  = [PROCESS_TABLE + childPID  * 16 + 11];
+alias parentPerProcessBase R4;
+alias childPerProcessBase  R5;
+parentPerProcessBase = [PROCESS_TABLE + parentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+childPerProcessBase  = [PROCESS_TABLE + childPID  * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
 
 counter = 0;
 while (counter < 8) do
-    [parentUserAreaPageNum * 512 + RESOURCE_TABLE_OFFSET + counter * 2] = 
-    [childUserAreaPageNum * 512 + RESOURCE_TABLE_OFFSET + counter * 2];
+    [childPerProcessBase + counter * 2] = [parentPerProcessBase + counter * 2];
     counter = counter + 1;
 endwhile;
 
@@ -102,9 +108,10 @@ alias childDiskBlockNum  R5;
 parentDiskBlockNum = DISK_MAP_TABLE + parentPID * 10;
 childDiskBlockNum  = DISK_MAP_TABLE + childPID  * 10;
 
-counter = 1;
-while (counter < 9) do
-    [parentDiskBlockNum + counter] = [childDiskBlockNum + counter];
+counter = 0;
+while (counter < 10) do
+    // Doubt - Why copy all? The Stacks of child is different from Parent
+    [childDiskBlockNum + counter] = [parentDiskBlockNum + counter];
     counter = counter + 1;
 endwhile;
 
@@ -115,7 +122,7 @@ childPageTableBase = PAGE_TABLE_BASE + childPID  * 20;
 
 counter = 0;
 while (counter <= 15) do
-    [parentPageTableBase + counter] = [childDiskBlockNum + counter];
+    [childPageTableBase + counter] = [parentPageTableBase + counter];
     [MEMORY_FREE_LIST + [parentPageTableBase + counter]] = [MEMORY_FREE_LIST + [parentPageTableBase + counter]] + 1;
     counter = counter + 1;
 endwhile;
@@ -131,7 +138,7 @@ while (counter < 512) do
 endwhile;
 
 // BP
-[PROCESS_TABLE + childPID * 16 + 11] = BP;
+[[PROCESS_TABLE + childPID * 16 + 11] * 512] = BP;
 
 // reutrn values
 [[parentPageTableBase + 2 * ((userSP - 1) / 512)] * 512 + ((userSP - 1) % 512)] = childPID;
@@ -140,5 +147,5 @@ endwhile;
 //MODE FLAG
 [PROCESS_TABLE + parentPID * 16 + 9] = 0;
 SP = userSP;
-
+breakpoint;
 ireturn;

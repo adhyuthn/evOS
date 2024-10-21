@@ -38,7 +38,7 @@ PTLR = [process_table_entry + 15];
 // If CREATED, then process has no history, return directly to the user Stack.
 if([process_table_entry + 4] == CREATED) then
     SP = [process_table_entry + 13];
-    BP = [[process_table_entry + new_pid * 16 + 11] * 512];
+    BP = [[process_table_entry+ 11] * 512];
     [process_table_entry + 4] = RUNNING;
     [process_table_entry + 9] = 0;
 	ireturn;

@@ -5,12 +5,15 @@ decl
 enddecl
 begin
     pid = exposcall("Fork");
+    temp = exposcall ("Write", -2, pid);
     if (pid > 0) then
         temp = exposcall ("Write", -2, "Parent");
         temp = exposcall ("Exec", "even_100.xsm");
+        temp = exposcall ("Exit");
     else 
         temp = exposcall ("Write", -2, "Child");
         temp = exposcall ("Exec", "odd_100.xsm");
+        temp = exposcall ("Exit");
     endif;
     return 0;
 end

@@ -75,8 +75,8 @@ if(functionNum == GET_PCB_ENTRY) then
         if ([PROCESS_TABLE + index * 16 + 4] == TERMINATED) then
             [PROCESS_TABLE + index * 16 + 1] = index;
             [PROCESS_TABLE + index * 16 + 4] = ALLOCATED;
-            PTBR = PAGE_TABLE_BASE + 20 * index;
-            PTLR = 10;
+            [PROCESS_TABLE + index * 16 + 14] = PAGE_TABLE_BASE + 20 * index;
+            [PROCESS_TABLE + index * 16 + 15] = 10;
             R0 = index;
             return;
         endif;

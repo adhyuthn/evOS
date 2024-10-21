@@ -16,7 +16,7 @@ load --module 2     /home/evoprime/Athena/PROJ/evOS/stages/stage_20/mod2_memory_
 load --module 4     /home/evoprime/Athena/PROJ/evOS/stages/stage_20/mod4_device_manager.xsm
 load --module 5     /home/evoprime/Athena/PROJ/evOS/stages/stage_20/mod5_scheduler_module.xsm
 load --module 7     /home/evoprime/Athena/PROJ/evOS/stages/stage_20/mod7_boot_module.xsm
-load --init         /home/evoprime/Athena/PROJ/evOS/stages/stage_20/init.xsm
+load --init         /home/evoprime/Athena/PROJ/evOS/stages/stage_20/init_linked_list.xsm
 load --idle         /home/evoprime/Athena/PROJ/evOS/stages/stage_20/idle_process.xsm
-load --exec         /home/evoprime/Athena/PROJ/evOS/stages/dojo/big.xsm
-load --exec         /home/evoprime/Athena/PROJ/evOS/stages/dojo/heap.xsm
+load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_20/odd_100.xsm
+load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_20/even_100.xsm
