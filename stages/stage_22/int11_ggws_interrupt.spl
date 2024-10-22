@@ -1,9 +1,8 @@
 alias userSP R0;
 alias sysCallNum R1;
 alias physicalAddrRetVal R2;
-alias currentPID R3;
 userSP = SP;
-currentPID = [SYSTEM_STATUS_TABLE + 1];
+
 sysCallNum = [([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
 physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
 
@@ -15,7 +14,9 @@ SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
 // ----------------------
 
 if (sysCallNum == INT_WAIT) then 
-    alias waitPID R4;
+    alias waitPID R3;
+    alias currentPID R4;
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
     [PROCESS_TABLE + currentPID * 16 + 9] = INT_WAIT;
     waitPID = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
     // looks sensible to not wait for IDLE
@@ -26,19 +27,25 @@ if (sysCallNum == INT_WAIT) then
 
         [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_PROCESS;
         [PROCESS_TABLE + currentPID * 16 + 5] = waitPID;
-        multipush(R0, R2, R3, R4);
+        multipush(R0, R2, R4);
         call MOD_5;
-        multipop(R0, R2, R3, R4);
+        multipop(R0, R2, R4);
+        [PROCESS_TABLE + currentPID * 16 + 9] = 0;
         [physicalAddrRetVal] = 0;
-        call Exit_Interrupt;
+        SP = userSP;
+        ireturn;
     else 
         [physicalAddrRetVal] = -1;
-        call Exit_Interrupt;
+        [PROCESS_TABLE + currentPID * 16 + 9] = 0;
+        SP = userSP;
+        ireturn;
     endif;
 endif;
 
 if (sysCallNum == INT_SIGNAL) then
+    alias currentPID R3;
     alias waitPID R4;
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
     waitPID = 0;
     [PROCESS_TABLE + currentPID * 16 + 9] = INT_SIGNAL;
     while (waitPID < 16) do 
@@ -46,24 +53,27 @@ if (sysCallNum == INT_SIGNAL) then
             [PROCESS_TABLE + waitPID * 16 + 5] == currentPID) then
             
             [PROCESS_TABLE + waitPID * 16 + 4] = READY;
+            [PROCESS_TABLE + currentPID * 16 + 9] = 0;
+            [physicalAddrRetVal] = 0;
+            SP = userSP;
+            ireturn;
         endif;
         waitPID = waitPID + 1;
     endwhile;
-    [physicalAddrRetVal] = 0;
-    call Exit_Interrupt;
 endif;
 
 if (sysCallNum == INT_GETPID) then
+    alias currentPID R3;
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
     [physicalAddrRetVal] = [PROCESS_TABLE + currentPID * 16 + 1];
-    call Exit_Interrupt;
+    SP = userSP;
+    ireturn;
 endif;
 
 if (sysCallNum == INT_GETPPID) then
+    alias currentPID R3;
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
     [physicalAddrRetVal] = [PROCESS_TABLE + currentPID * 16 + 2];
-    call Exit_Interrupt;
+    SP = userSP;
+    ireturn;
 endif;
-
-Exit_Interrupt:
-[PROCESS_TABLE + currentPID * 16 + 9] = 0;
-SP = userSP;
-ireturn;

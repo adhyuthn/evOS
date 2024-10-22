@@ -1,0 +1,37 @@
+// Change MODE to Read.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 7;
+
+alias userSP R0;
+alias currentPID R1;
+userSP=SP;
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+// In Kernel mode. Do manual HAT
+alias fileDescriptor R2;
+fileDescriptor=[[PTBR + 2 * ((userSP - 4)/ 512)] * 512 + (userSP - 4) % 512 ];
+alias physicalAddrRetVal R3;
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+if (fileDescriptor != -1) then
+    [physicalAddrRetVal] = -1;
+else
+    multipush(R0, R1, R2, R3);
+    R1 = TERMINAL_READ;
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    // logical Address of Word- Read Stage INstruction
+    R3 = [([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512)];
+    call MOD_4;
+    multipop(R0, R1, R2, R3);
+    [physicalAddrRetVal] = 0;
+endif;
+
+SP = userSP;
+//MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+
+ireturn;
