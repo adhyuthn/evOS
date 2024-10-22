@@ -1,0 +1,61 @@
+alias userSP R0;
+alias sysCallNum R1;
+alias physicalAddrRetVal R2;
+alias currentPID R3;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+userSP = SP;
+
+sysCallNum = [([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+if (sysCallNum == INT_SEMLOCK) then
+    alias argSEMID R4;
+    alias semTableIndex R5;
+    [PROCESS_TABLE + currentPID * 16 + 9] = INT_SEMLOCK;
+    argSEMID = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+    semTableIndex = [[PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET + argSEMID * 2 + 1];
+    if (argSEMID >=0 &&
+        argSEMID <=7 &&
+        [perProcessBase + argSEMID * 2] == 1) then
+        // if lock can't be acquired rn, sleep 
+        while ([SEMAPHORE_TABLE + semTableIndex * 4] != -1) do
+            if ([SEMAPHORE_TABLE + semTableIndex * 4] == currentPID) then
+                break;
+            endif
+            [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_SEMAPHORE;
+            [PROCESS_TABLE + currentPID * 16 + 5] = semTableIndex;
+            multipush(R0, R2, R3, R4, R5);
+            call SCHEDULER;
+            multipop(R0, R2, R3, R4, R5);
+        endwhile;
+        // acquire lock
+        [SEMAPHORE_TABLE + semTableIndex * 4] = currentPID
+        [physicalAddrRetVal] = 0;
+    else
+        [physicalAddrRetVal] = -1; 
+    endif;
+endif
+
+if (sysCallNum == INT_SEMUNLOCK) then
+    alias argSEMID R4;
+    [PROCESS_TABLE + currentPID * 16 + 9] = INT_SEMUNLOCK;
+    argSEMID = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+    if (argSEMID >=0 &&
+        argSEMID <=7 &&
+        [perProcessBase + argSEMID * 2] == 1) then
+        [physicalAddrRetVal] = 0;
+    else
+        [physicalAddrRetVal] = -1; 
+    endif;
+endif;
+
+[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+SP = userSP;
+ireturn;
+
