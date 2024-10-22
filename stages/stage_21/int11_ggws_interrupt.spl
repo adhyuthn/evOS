@@ -22,10 +22,11 @@ if (sysCallNum == INT_WAIT) then
     // looks sensible to not wait for IDLE
     if (waitPID != currentPID && 
         waitPID > 0 && 
+        waitPID < 16 &&
         [PROCESS_TABLE + waitPID * 16 + 4] != TERMINATED) then
 
-        [PROCESS_TABLE + waitPID * 16 + 4] = WAIT_PROCESS;
-        [PROCESS_TABLE + waitPID * 16 + 5] = waitPID;
+        [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_PROCESS;
+        [PROCESS_TABLE + currentPID * 16 + 5] = waitPID;
         multipush(R0, R2, R4);
         call MOD_5;
         multipop(R0, R2, R4);
@@ -57,6 +58,7 @@ if (sysCallNum == INT_SIGNAL) then
             SP = userSP;
             ireturn;
         endif;
+        waitPID = waitPID + 1;
     endwhile;
 endif;
 

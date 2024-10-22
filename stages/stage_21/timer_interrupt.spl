@@ -1,9 +1,3 @@
-// print "----------";
-// print "TIMER";
-// print "Current PID = ";
-// print [SYSTEM_STATUS_TABLE + 1];
-// print "----------";
-
 // Store SP in UPTR
 [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = SP;
 

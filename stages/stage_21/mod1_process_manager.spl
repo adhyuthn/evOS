@@ -20,6 +20,20 @@ if(functionNum == EXIT_PROCESS) then
     call MOD_1;
     multipop(R1, R2);
     [PROCESS_TABLE + currentPID*16 + 4] = TERMINATED;
+    if ([PROCESS_TABLE + currentPID * 16 + 9] != INT_EXEC) then
+        alias process R3;
+        process = 0;
+        while (process < 16) do 
+            if ([PROCESS_TABLE + process * 16 + 4] == WAIT_PROCESS &&
+                [PROCESS_TABLE + process * 16 + 5] == currentPID) then
+                [PROCESS_TABLE + process * 16 + 4] = READY;
+            endif;
+            if ([PROCESS_TABLE + process * 16 + 2] == currentPID) then 
+                [PROCESS_TABLE + process * 16 + 2] = -1;
+            endif;
+            process = process + 1;
+        endwhile;
+    endif;
     return;
 endif;
 

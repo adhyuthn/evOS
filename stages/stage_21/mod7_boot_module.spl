@@ -46,9 +46,17 @@ loadi(19,32);
 loadi(20,33);
 loadi(21,34);
 
-// load INT 10 
+// load INT 10 halt interrupt
 loadi(22,35);
 loadi(23,36);
+
+// load INT 11 ggws
+loadi(24,37);
+loadi(25,38);
+
+// load INT 15 shutdown
+loadi(32,45);
+loadi(33,46);
 
 // load MOD1 - Process Manager
 loadi(42,55);

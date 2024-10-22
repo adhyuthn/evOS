@@ -60,6 +60,7 @@ if (functionNum == GET_CODE_PAGE) then
             if ([DISK_MAP_TABLE  + pidCounter * 10 + 4 + counter] == blockNum &&
                 [PAGE_TABLE_BASE + pidCounter * 20 + 9 + 2 * counter] == "0100") then
                     R0 = [PAGE_TABLE_BASE + pidCounter * 20 + 8 + 2 * counter];
+                    [MEMORY_FREE_LIST + R0] = [MEMORY_FREE_LIST + R0] + 1;
                     return;
             endif;
             counter = counter + 1;

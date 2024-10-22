@@ -147,5 +147,4 @@ endwhile;
 //MODE FLAG
 [PROCESS_TABLE + parentPID * 16 + 9] = 0;
 SP = userSP;
-breakpoint;
 ireturn;

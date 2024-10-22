@@ -6,13 +6,13 @@ decl
 enddecl
 begin
     while (1 == 1) do
-        temp = exposcall ("Write", -2, "user@evos");
+        temp = exposcall ("Write", -2, "[shell]");
         temp = exposcall ("Read", -1, progPath);
         if (progPath == "Shutdown") then 
             temp = exposcall ("Shutdown");
         else
             childPid = exposcall ("Fork");
-            if (childPid != 0) then 
+            if (childPid > 0) then 
                 temp = exposcall ("Wait", childPid);
             else 
                 temp = exposcall ("Exec", progPath);
