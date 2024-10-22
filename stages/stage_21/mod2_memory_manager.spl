@@ -79,7 +79,6 @@ if (functionNum == GET_CODE_PAGE) then
     R3 = R0;
     call MOD_4;
     multipop(R0, R1, R2);
-    breakpoint;
     return;
 endif;
 
