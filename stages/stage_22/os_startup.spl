@@ -1,4 +1,4 @@
-// load MOD_7
+// load BOOT_MODULE
 loadi(54,67);
 loadi(55,68);
 

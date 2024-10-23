@@ -32,8 +32,8 @@ if (EC != 0 ||
     R1 = EXIT_PROCESS;
     R2 = currentPID;
     print "-------";
-    call MOD_1;
-    call MOD_5;
+    call PROCESS_MANAGER;
+    call SCHEDULER;
 endif;
 
 // Handle Page Fault
@@ -48,7 +48,7 @@ if (EPN >= 4 && EPN <= 7 ) then
     multipush(R2, R3);
     R2 = blockNum;
     R1 = GET_CODE_PAGE;
-    call MOD_2;
+    call MEMORY_MANAGER;
     [PTBR + EPN * 2] = R0;
     [PTBR + EPN * 2 + 1] = "1100";
     multipop(R2, R3);
@@ -59,11 +59,11 @@ if (EPN == 2) then
     print "HP request";
     multipush(R2, R3);
     R1 = GET_FREE_PAGE;
-    call MOD_2;
+    call MEMORY_MANAGER;
     [PTBR + 4] = R0;
     [PTBR + 5] = "1110";
     R1 = GET_FREE_PAGE;
-    call MOD_2;
+    call MEMORY_MANAGER;
     [PTBR + 6] = R0;
     [PTBR + 7] = "1110";
     multipop(R2, R3);

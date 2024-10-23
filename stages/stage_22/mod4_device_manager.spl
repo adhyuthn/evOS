@@ -7,14 +7,14 @@ if (functionNum == TERMINAL_WRITE) then
     multipush(R1, R2);
     R1 = ACQUIRE_TERMINAL;
     R2 = currentPID;
-    call MOD_0;
+    call RESOURCE_MANAGER;
     multipop(R1, R2);
     print R3;
 
     multipush(R1, R2);
     R1 = RELEASE_TERMINAL;
     R2 = currentPID;
-    call MOD_0;
+    call RESOURCE_MANAGER;
     returnValue = R0;
     multipop(R1, R2);
     return;
@@ -24,12 +24,12 @@ if (functionNum == TERMINAL_READ) then
     multipush(R1, R2, R3);
     R1 = ACQUIRE_TERMINAL;
     R2 = currentPID;
-    call MOD_0;
+    call RESOURCE_MANAGER;
     multipop(R1, R2, R3);
     read;
     [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 4] = WAIT_TERMINAL;
     multipush(R1, R2, R3);
-    call MOD_5;
+    call SCHEDULER;
     multipop(R1, R2, R3);
     // The Address in R3 is logical
     [[PTBR + 2 * (R3 / 512)] * 512 + (R3 % 512)] = [PROCESS_TABLE + currentPID * 16 + 8];
@@ -42,7 +42,7 @@ if (functionNum == DISK_LOAD) then
     alias diskNum R4;
     multipush(R2, R3, R4);
     R1 = ACQUIRE_DISK;
-    call MOD_0;
+    call RESOURCE_MANAGER;
     multipop(R2, R3, R4);
     [DISK_STATUS_TABLE + 1] = 0;
     [DISK_STATUS_TABLE + 2] = pageNum;
@@ -50,6 +50,6 @@ if (functionNum == DISK_LOAD) then
     // I believe address Translation isn't required
     load(pageNum, diskNum);
     [PROCESS_TABLE + (currentPID * 16) + 4] = WAIT_DISK;
-    call MOD_5;
+    call SCHEDULER;
     return;
 endif;

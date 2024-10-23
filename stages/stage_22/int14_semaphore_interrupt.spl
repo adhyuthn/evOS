@@ -17,9 +17,11 @@ SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
 if (sysCallNum == INT_SEMLOCK) then
     alias argSEMID R4;
     alias semTableIndex R5;
+    alias perProcessBase R6;
     [PROCESS_TABLE + currentPID * 16 + 9] = INT_SEMLOCK;
     argSEMID = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
-    semTableIndex = [[PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET + argSEMID * 2 + 1];
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    semTableIndex =  [perProcessBase + argSEMID * 2 + 1];
     if (argSEMID >=0 &&
         argSEMID <=7 &&
         [perProcessBase + argSEMID * 2] == 1) then
@@ -27,7 +29,7 @@ if (sysCallNum == INT_SEMLOCK) then
         while ([SEMAPHORE_TABLE + semTableIndex * 4] != -1) do
             if ([SEMAPHORE_TABLE + semTableIndex * 4] == currentPID) then
                 break;
-            endif
+            endif;
             [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_SEMAPHORE;
             [PROCESS_TABLE + currentPID * 16 + 5] = semTableIndex;
             multipush(R0, R2, R3, R4, R5);
@@ -35,26 +37,50 @@ if (sysCallNum == INT_SEMLOCK) then
             multipop(R0, R2, R3, R4, R5);
         endwhile;
         // acquire lock
-        [SEMAPHORE_TABLE + semTableIndex * 4] = currentPID
+        [SEMAPHORE_TABLE + semTableIndex * 4] = currentPID;
         [physicalAddrRetVal] = 0;
     else
         [physicalAddrRetVal] = -1; 
     endif;
-endif
+    call Exit_Interrupt;
+endif;
 
 if (sysCallNum == INT_SEMUNLOCK) then
     alias argSEMID R4;
+    alias semTableIndex R5;
+    alias counter R6;
+    alias perProcessBase R7;
     [PROCESS_TABLE + currentPID * 16 + 9] = INT_SEMUNLOCK;
     argSEMID = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    semTableIndex =  [perProcessBase + argSEMID * 2 + 1];
     if (argSEMID >=0 &&
         argSEMID <=7 &&
         [perProcessBase + argSEMID * 2] == 1) then
         [physicalAddrRetVal] = 0;
+        // If locked
+        if ([SEMAPHORE_TABLE + semTableIndex * 4] != -1) then
+            if ([SEMAPHORE_TABLE + semTableIndex * 4] != currentPID) then
+                [physicalAddrRetVal] = -2;
+                call Exit_Interrupt;
+            endif;
+            [SEMAPHORE_TABLE + semTableIndex * 4] = -1;
+            counter = 0;
+            while(counter < 16) do
+                if ([PROCESS_TABLE + counter * 16 + 4] == WAIT_SEMAPHORE &&
+                    [PROCESS_TABLE + counter * 16 + 5] == semTableIndex) then
+                    [PROCESS_TABLE + counter * 16 + 4] = READY;
+                endif;
+                counter = counter + 1;
+            endwhile;
+        endif;
     else
         [physicalAddrRetVal] = -1; 
     endif;
+    call Exit_Interrupt;
 endif;
 
+Exit_Interrupt:
 [PROCESS_TABLE + currentPID * 16 + 9] = 0;
 SP = userSP;
 ireturn;

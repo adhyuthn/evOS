@@ -37,7 +37,7 @@ if (sysCallNum == INT_SEMGET) then
                 [perProcessBase + index * 2 + 1] = R0;
                 [physicalAddrRetVal] = index;
             endif;
-            multipush(R0);
+            multipop(R0);
             break;
         endif;
         index = index + 1;
@@ -59,14 +59,14 @@ if (sysCallNum == INT_SEMRELEASE) then
         R1 = RELEASE_SEMAPHORE;
         call RESOURCE_MANAGER;
         multipop(R0, R2, R3, R4, R5);
-        [perProcessBase + argSEMID * 2] == -1
+        [perProcessBase + argSEMID * 2] = -1;
     else 
         [physicalAddrRetVal] = -1;
     endif;
     call Exit_Interrupt;
 endif;
 
-Exit_Interrupt;
+Exit_Interrupt:
 [PROCESS_TABLE + currentPID * 16 + 9] = 0;
 SP = userSP;
 ireturn;

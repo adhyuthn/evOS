@@ -36,12 +36,12 @@ if ([PTBR + 4] == -1 ||
     [PTBR + 6] == -1) then 
     multipush(R0, R1, R2, R3);
     R1 = GET_FREE_PAGE;
-    call MOD_2;
+    call MEMORY_MANAGER;
     [PTBR + 4] = R0;
     // Should this be "1110"? I don't think so. It is not accessed.
     [PTBR + 5] = "0110";
     R1 = GET_FREE_PAGE;
-    call MOD_2;
+    call MEMORY_MANAGER;
     [PTBR + 6] = R0;
     [PTBR + 7] = "0110";
     multipop(R0, R1, R2, R3);
@@ -55,17 +55,17 @@ multipush(R0, R2);
 multipush(R1);
 multipush(R3);
 R1 = GET_FREE_PAGE;
-call MOD_2;
+call MEMORY_MANAGER;
 multipop(R3);
 [childPageTableBase + 16] = R0;
 multipush(R3);
 R1 = GET_FREE_PAGE;
-call MOD_2;
+call MEMORY_MANAGER;
 multipop(R3);
 [childPageTableBase + 18] = R0;
 multipush(R3);
 R1 = GET_FREE_PAGE;
-call MOD_2;
+call MEMORY_MANAGER;
 multipop(R3);
 multipop(R1);
 [PROCESS_TABLE + childPID * 16 + 11] = R0;
@@ -99,6 +99,10 @@ childPerProcessBase  = [PROCESS_TABLE + childPID  * 16 + 11] * 512 + RESOURCE_TA
 counter = 0;
 while (counter < 8) do
     [childPerProcessBase + counter * 2] = [parentPerProcessBase + counter * 2];
+    // if semaphore, increment process count 
+    if ([parentPerProcessBase + counter * 2] == SEMAPHORE) then 
+        [SEMAPHORE_TABLE + [parentPerProcessBase + counter * 2 + 1] * 4 + 1] = [SEMAPHORE_TABLE + [parentPerProcessBase + counter * 2 + 1] * 4 + 1] + 1;
+    endif;
     counter = counter + 1;
 endwhile;
 
