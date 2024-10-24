@@ -12,7 +12,7 @@ reqPID = [TERMINAL_STATUS_TABLE + 1];
 multipush(R0);
 R1 = RELEASE_TERMINAL;
 R2 = reqPID;
-call MOD_0;
+call RESOURCE_MANAGER;
 multipop(R0);
 
 // ISR finished

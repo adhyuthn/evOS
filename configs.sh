@@ -55,6 +55,7 @@ function EXPL() {
 
 function XSM() {
     cd $EXPOS_DIR/xsm
+    clear
     ./xsm $@
     cd -
 }

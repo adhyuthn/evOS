@@ -67,6 +67,7 @@ JZ R16, _L5
 MOV R16, "Bad Mem."
 PORT P1, R16
 OUT
+BRKP
 JMP _L6
 _L5:
 MOV R16, 3

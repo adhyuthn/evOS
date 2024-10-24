@@ -3,12 +3,11 @@ alias currentPID R2;
 alias returnValue R0;
 alias pid R3;
 
-if (functionNum == 8) then
+if (functionNum == ACQUIRE_TERMINAL) then
     while ([TERMINAL_STATUS_TABLE + 0] == 1) do
         [PROCESS_TABLE + (currentPID * 16) + 4 ] = WAIT_TERMINAL;
         multipush(R1, R2);
-        call MOD_5;
-    
+        call SCHEDULER;
         multipop(R1, R2);
     endwhile;
     
@@ -17,7 +16,7 @@ if (functionNum == 8) then
     return;
 endif;
 
-if(functionNum == 9) then
+if(functionNum == RELEASE_TERMINAL) then
     if (currentPID == [TERMINAL_STATUS_TABLE + 1] ) then
         [TERMINAL_STATUS_TABLE + 0] = 0;
         pid = 1;
@@ -40,7 +39,7 @@ if (functionNum == ACQUIRE_DISK) then
     while ([DISK_STATUS_TABLE] == 1) do 
         [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_DISK;
         multipush(R2);
-        call MOD_5;
+        call SCHEDULER;
         multipop(R2);
     endwhile;
     [DISK_STATUS_TABLE] = 1;
@@ -59,7 +58,7 @@ if (functionNum == ACQUIRE_SEMAPHORE) then
             [SEMAPHORE_TABLE + index * 4 + 1] =  1;
             [SEMAPHORE_TABLE + index * 4    ] = -1;
             R0 = index;
-            break
+            break;
         endif;
         index = index + 1;
     endwhile;
@@ -81,7 +80,8 @@ if (functionNum == RELEASE_SEMAPHORE) then
             endif;
             counterPID = counterPID + 1;
         endwhile;
-    endif
+    endif;
     [SEMAPHORE_TABLE + semTableIndex * 4 + 1] = [SEMAPHORE_TABLE + semTableIndex * 4 + 1] - 1;
+    return;
 endif;
 
