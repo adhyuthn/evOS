@@ -1,0 +1,132 @@
+alias functionNum R1;
+alias currentPID R2;
+alias returnValue R0;
+alias pid R3;
+
+if (functionNum == ACQUIRE_TERMINAL) then
+    while ([TERMINAL_STATUS_TABLE + 0] == 1) do
+        [PROCESS_TABLE + (currentPID * 16) + 4 ] = WAIT_TERMINAL;
+        multipush(R1, R2);
+        call SCHEDULER;
+        multipop(R1, R2);
+    endwhile;
+    
+    [TERMINAL_STATUS_TABLE + 0] = 1;
+    [TERMINAL_STATUS_TABLE + 1] = currentPID;
+    return;
+endif;
+
+if(functionNum == RELEASE_TERMINAL) then
+    if (currentPID == [TERMINAL_STATUS_TABLE + 1] ) then
+        [TERMINAL_STATUS_TABLE + 0] = 0;
+        pid = 1;
+        while (pid < 16) do
+            if ([PROCESS_TABLE + pid * 16 + 4] == WAIT_TERMINAL) then
+                [PROCESS_TABLE + pid * 16 + 4] = READY;
+            endif;
+            pid = pid + 1;
+        endwhile;
+        returnValue = 0;
+        return;
+    else
+        returnValue = -1;
+        return;
+    endif;
+endif;
+
+if (functionNum == ACQUIRE_DISK) then
+     alias currentPID R2;
+    while ([DISK_STATUS_TABLE] == 1) do 
+        [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_DISK;
+        multipush(R2);
+        call SCHEDULER;
+        multipop(R2);
+    endwhile;
+    [DISK_STATUS_TABLE] = 1;
+    [DISK_STATUS_TABLE + 4] = currentPID;
+    return;
+endif;
+
+if (functionNum == ACQUIRE_SEMAPHORE) then
+    alias PID R2;
+    alias index R3;
+    index = 0;
+    // return val for failure
+    R0 = -1;
+    while (index < 32) do
+        if ([SEMAPHORE_TABLE + index * 4 + 1] == 0) then
+            [SEMAPHORE_TABLE + index * 4 + 1] =  1;
+            [SEMAPHORE_TABLE + index * 4    ] = -1;
+            R0 = index;
+            break;
+        endif;
+        index = index + 1;
+    endwhile;
+    return;
+endif;
+
+if (functionNum == RELEASE_SEMAPHORE) then
+    alias PID R2;
+    alias semTableIndex R3;
+    alias counterPID R4;
+    counterPID = 0;
+    // unlock before releasing (do that only if req. PID = locking PID)
+    if ([SEMAPHORE_TABLE + semTableIndex * 4] == PID) then
+        [SEMAPHORE_TABLE + semTableIndex * 4] = -1;
+        while (counterPID < 16) do
+            if ([PROCESS_TABLE + counterPID * 16 + 4] == WAIT_SEMAPHORE &&
+                [PROCESS_TABLE + counterPID * 16 + 5] == semTableIndex) then
+                [PROCESS_TABLE + counterPID * 16 + 4] = READY;
+            endif;
+            counterPID = counterPID + 1;
+        endwhile;
+    endif;
+    [SEMAPHORE_TABLE + semTableIndex * 4 + 1] = [SEMAPHORE_TABLE + semTableIndex * 4 + 1] - 1;
+    return;
+endif;
+
+if (functionNum == ACQUIRE_INODE) then
+    alias index R2;
+    alias PID R3;
+    // Is file free for locking?
+    while ([FILE_STATUS_TABLE + index * 4] != -1) do
+        [PROCESS_TABLE + PID * 16 + 4] = WAIT_FILE;
+        [PROCESS_TABLE + PID * 16 + 5] = index;
+        multipush(R2, R3);
+        call SCHEDULER;
+        multipop(R2, R3);
+    endwhile;
+    // Check if file was deleted
+    if ([INODE_TABLE + index * 16 + 1] == -1) then
+        returnValue = -1;
+        return;
+    endif;
+    [FILE_STATUS_TABLE + index * 4] = PID;
+    returnValue = 0;
+    return;
+endif;
+
+if (functionNum == RELEASE_INODE) then
+    alias index R2;
+    alias PID R3;
+    alias counter R4;
+
+    // wrong PID trying to RELEASE_INODE
+    if (PID != [FILE_STATUS_TABLE + index * 4]) then
+        returnValue = -1;
+        return;
+    endif;
+    // lock
+    [FILE_STATUS_TABLE + index * 4] = -1;
+    // Wakeup process who ewnt to sleep
+    while (counter < 16) do 
+        if ([PROCESS_TABLE + counter * 16 + 4] == WAIT_FILE &&
+            [PROCESS_TABLE + counter * 16 + 5] == index) then
+            [PROCESS_TABLE + counter * 16 + 4] = READY;
+        endif;
+        counter = counter + 1;
+    endwhile;
+    returnValue = 0;
+    return;
+endif;
+
