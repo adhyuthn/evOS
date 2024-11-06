@@ -1,0 +1,19 @@
+define assignPageAddr 38400;
+[assignPageAddr + 3] = [assignPageAddr + 3] + 1;
+
+print "Max Mem:";
+print [assignPageAddr];
+print "---";
+
+print "Disk Access:";
+print [assignPageAddr + 1];
+print "---";
+
+print "C. Switches:";
+print [assignPageAddr + 2];
+print "---";
+
+print "K. Switches:";
+print [assignPageAddr + 3];
+print "---";
+ireturn;
