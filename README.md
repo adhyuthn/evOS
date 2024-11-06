@@ -6,7 +6,7 @@ eXpOS is an attempt to create an operting system from scratch for a hypothetical
 `EXPL` is a high level language for writing user programs. Compiles to XSM instructions.
 
 ---
-
+> [!TIP]
 > - `configs.sh` contains some functions that eased my way around navigating the the tools.
 > - `vim/` contains syntax files for XSM, SPL and EXPL.
 
@@ -29,14 +29,14 @@ eXpOS is an attempt to create an operting system from scratch for a hypothetical
 - [x] [Stage 13](https://github.com/adhyuthn/evOS/tree/main/stages/stage_13) : Boot Module (4 Hours)
 - [x] [Stage 14](https://github.com/adhyuthn/evOS/tree/main/stages/stage_14) : Round robin scheduler (4 Hours)
 - [x] [Stage 15](https://github.com/adhyuthn/evOS/tree/main/stages/stage_15) : Resource Manager Module (4 Hours)
-- [x] [Stage 16]() : Console Input (6 Hours)
-- [x] [Stage 17]() : Program Loader (6 Hours)
-- [x] [Stage 18]() : Disk Interrupt Handler (6 Hours)
-- [x] [Stage 19]() : Exception Handler (6 Hours)
-- [x] [Stage 20]() : Process Creation and Termination (12 Hours)
-- [x] [Stage 21]() : Process Synchronization (4 Hours)
-- [x] [Stage 22]() : Semaphores (4 Hours)
-- [ ] [Stage 23]() : File Creation and Deletion (6 Hours)
+- [x] [Stage 16](https://github.com/adhyuthn/evOS/tree/main/stages/stage_16) : Console Input (6 Hours)
+- [x] [Stage 17](https://github.com/adhyuthn/evOS/tree/main/stages/stage_17) : Program Loader (6 Hours)
+- [x] [Stage 18](https://github.com/adhyuthn/evOS/tree/main/stages/stage_18) : Disk Interrupt Handler (6 Hours)
+- [x] [Stage 19](https://github.com/adhyuthn/evOS/tree/main/stages/stage_19) : Exception Handler (6 Hours)
+- [x] [Stage 20](https://github.com/adhyuthn/evOS/tree/main/stages/stage_20) : Process Creation and Termination (12 Hours)
+- [x] [Stage 21](https://github.com/adhyuthn/evOS/tree/main/stages/stage_21) : Process Synchronization (4 Hours)
+- [x] [Stage 22](https://github.com/adhyuthn/evOS/tree/main/stages/stage_22) : Semaphores (4 Hours)
+- [x] [Stage 23](https://github.com/adhyuthn/evOS/tree/main/stages/stage_23) : File Creation and Deletion (6 Hours)
 - [ ] [Stage 24]() : File Read (12 Hours)
 - [ ] [Stage 25]() : File Write (12 Hours)
 - [ ] [Stage 26]() : User Management (12 Hours)

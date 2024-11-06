@@ -1,3 +1,5 @@
+define assignPageAddr 38400;
+
 alias functionNum R1;
 alias currentPID R2;
 alias returnValue R0;
@@ -44,6 +46,8 @@ if (functionNum == ACQUIRE_DISK) then
     endwhile;
     [DISK_STATUS_TABLE] = 1;
     [DISK_STATUS_TABLE + 4] = currentPID;
+    // Stage 22 - Assignment
+    [assignPageAddr + 1] = [assignPageAddr + 1] + 1;
     return;
 endif;
 

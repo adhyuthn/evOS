@@ -1,4 +1,5 @@
 define maxPageUsed 82; // IDLE process too.
+define assignPageAddr 38400;
 
 // load libs
 loadi(63,13);
@@ -66,6 +67,10 @@ loadi(31,44);
 loadi(32,45);
 loadi(33,46);
 
+// load INT 18 Assignment
+loadi(38,51);
+loadi(39,52);
+
 // load MOD1 - Process Manager
 loadi(42,55);
 loadi(43,56);
@@ -104,7 +109,7 @@ while(pageNum <= maxPageUsed) do
     [MEMORY_FREE_LIST + pageNum] = 1;
     pageNum = pageNum + 1;
 endwhile;
-while(pageNum <= MAX_MEM_PAGE) do 
+while(pageNum < NUM_MEM_PAGES) do 
     [MEMORY_FREE_LIST + pageNum] = 0;
     pageNum = pageNum + 1;
 endwhile;
@@ -119,13 +124,18 @@ while (index < MAX_SEM_COUNT) do
 endwhile;
 
 // Initialize WAIT_MEM_COUNT and MEM_FREE_COUNT
-[SYSTEM_STATUS_TABLE + 2] = 128 - maxPageUsed; 
+[SYSTEM_STATUS_TABLE + 2] = NUM_MEM_PAGES - (maxPageUsed + 1); 
 [SYSTEM_STATUS_TABLE + 3] = 0; 
 
 // Initialize Terminal Status table
 [TERMINAL_STATUS_TABLE + 0] = 0;
 // Initialize DISK Status table
 [DISK_STATUS_TABLE + 0] = 0;
+
+// Stage 22 Assignment Mem Setup
+[assignPageAddr    ] = 0;
+[assignPageAddr + 1] = 0;
+[assignPageAddr + 2] = 0;
 
 // ----------PROCESS SETUP----------------
 

@@ -112,11 +112,11 @@ POP R3
 POP R2
 POP R0
 MOV [R2], 0
-CALL Exit_Interrupt
+goto Exit_Interrupt
 JMP _L4
 _L3:
 MOV [R2], -1
-CALL Exit_Interrupt
+goto Exit_Interrupt
 _L4:
 JMP _L2
 _L1:
@@ -167,7 +167,7 @@ MOV R4, R16
 JMP _L7
 _L8:
 MOV [R2], 0
-CALL Exit_Interrupt
+goto Exit_Interrupt
 JMP _L6
 _L5:
 _L6:
@@ -181,7 +181,7 @@ ADD R16, R17
 ADD R16, 1
 MOV R16, [R16]
 MOV [R2], R16
-CALL Exit_Interrupt
+goto Exit_Interrupt
 JMP _L12
 _L11:
 _L12:
@@ -195,7 +195,7 @@ ADD R16, R17
 ADD R16, 2
 MOV R16, [R16]
 MOV [R2], R16
-CALL Exit_Interrupt
+goto Exit_Interrupt
 JMP _L14
 _L13:
 _L14:

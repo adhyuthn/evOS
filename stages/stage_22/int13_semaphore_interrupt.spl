@@ -1,3 +1,5 @@
+define assignPageAddr 38400;
+[assignPageAddr + 3] = [assignPageAddr + 3] + 1;
 alias userSP R0;
 alias sysCallNum R1;
 alias physicalAddrRetVal R2;
@@ -42,7 +44,7 @@ if (sysCallNum == INT_SEMGET) then
         endif;
         index = index + 1;
     endwhile;
-    call Exit_Interrupt;
+    goto Exit_Interrupt;
 endif;
 
 if (sysCallNum == INT_SEMRELEASE) then
@@ -63,7 +65,7 @@ if (sysCallNum == INT_SEMRELEASE) then
     else 
         [physicalAddrRetVal] = -1;
     endif;
-    call Exit_Interrupt;
+    goto Exit_Interrupt;
 endif;
 
 Exit_Interrupt:

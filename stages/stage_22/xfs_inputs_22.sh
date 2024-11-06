@@ -13,6 +13,7 @@ load --int=11       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int11_ggws_i
 load --int=13       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int13_semaphore_interrupt.xsm
 load --int=14       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int14_semaphore_interrupt.xsm
 load --int=15       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int15_shutdown_interrupt.xsm
+load --int=18       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int18_assign_interrupt.xsm
 load --exhandler    /home/evoprime/Athena/PROJ/evOS/stages/stage_22/exhandler.xsm
 load --module 0     /home/evoprime/Athena/PROJ/evOS/stages/stage_22/mod0_resource_manager.xsm
 load --module 1     /home/evoprime/Athena/PROJ/evOS/stages/stage_22/mod1_process_manager.xsm
@@ -27,6 +28,7 @@ load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_22/even_100.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_22/assign1.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_22/assign2p.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_22/assign2c.xsm
+load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_22/top.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_22/assign3s.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_22/assign3c.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/stages/dojo/getpid.xsm

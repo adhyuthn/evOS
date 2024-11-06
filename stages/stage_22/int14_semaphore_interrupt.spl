@@ -42,7 +42,7 @@ if (sysCallNum == INT_SEMLOCK) then
     else
         [physicalAddrRetVal] = -1; 
     endif;
-    call Exit_Interrupt;
+    goto Exit_Interrupt;
 endif;
 
 if (sysCallNum == INT_SEMUNLOCK) then
@@ -62,7 +62,7 @@ if (sysCallNum == INT_SEMUNLOCK) then
         if ([SEMAPHORE_TABLE + semTableIndex * 4] != -1) then
             if ([SEMAPHORE_TABLE + semTableIndex * 4] != currentPID) then
                 [physicalAddrRetVal] = -2;
-                call Exit_Interrupt;
+                goto Exit_Interrupt;
             endif;
             [SEMAPHORE_TABLE + semTableIndex * 4] = -1;
             counter = 0;
@@ -77,7 +77,7 @@ if (sysCallNum == INT_SEMUNLOCK) then
     else
         [physicalAddrRetVal] = -1; 
     endif;
-    call Exit_Interrupt;
+    goto Exit_Interrupt;
 endif;
 
 Exit_Interrupt:

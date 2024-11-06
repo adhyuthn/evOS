@@ -1,3 +1,5 @@
+define assignPageAddr 38400;
+[assignPageAddr + 3] = [assignPageAddr + 3] + 1;
 print "-------";
 print "EXHANDLER";
 
@@ -21,7 +23,6 @@ if (EC != 0 ||
     else
         if (EC == 2) then
             print "Bad Mem.";
-            breakpoint;
         else
             if (EC == 3) then
                 print "Bad AL.";

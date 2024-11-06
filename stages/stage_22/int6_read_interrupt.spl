@@ -1,3 +1,5 @@
+define assignPageAddr 38400;
+[assignPageAddr + 3] = [assignPageAddr + 3] + 1;
 // Change MODE to Read.
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 7;
 

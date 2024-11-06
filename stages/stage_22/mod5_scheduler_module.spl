@@ -1,3 +1,5 @@
+define assignPageAddr 38400;
+
 alias currentPID R0;
 alias processTableEntry R1;
 currentPID = [SYSTEM_STATUS_TABLE+1];
@@ -28,6 +30,9 @@ while(1) do
         endif;
     endif;
 endwhile;
+
+// Stage 22 - Assignment
+[assignPageAddr + 2] = [assignPageAddr + 2] + 1;
 
 processTableEntry = PROCESS_TABLE + newPID * 16;
 SP = [processTableEntry + 11] * 512 + [processTableEntry + 12];

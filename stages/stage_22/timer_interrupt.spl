@@ -1,3 +1,6 @@
+define assignPageAddr 38400;
+[assignPageAddr + 3] = [assignPageAddr + 3] + 1;
+
 // Store SP in UPTR
 [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = SP;
 

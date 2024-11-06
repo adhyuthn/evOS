@@ -155,7 +155,7 @@ JMP _L4
 _L3:
 MOV [R2], -1
 _L4:
-CALL Exit_Interrupt
+JMP Exit_Interrupt
 JMP _L2
 _L1:
 _L2:
@@ -227,7 +227,7 @@ MOV R16, [R16]
 NE R16, R3
 JZ R16, _L15
 MOV [R2], -2
-CALL Exit_Interrupt
+JMP Exit_Interrupt
 JMP _L16
 _L15:
 _L16:
@@ -279,7 +279,7 @@ JMP _L12
 _L11:
 MOV [R2], -1
 _L12:
-CALL Exit_Interrupt
+JMP Exit_Interrupt
 JMP _L10
 _L9:
 _L10:

@@ -1,33 +1,39 @@
+define assignPageAddr 38400;
+
 alias functionNum R1;
 
 if (functionNum == GET_FREE_PAGE) then
-    alias currentPID R2;
-    currentPID = [SYSTEM_STATUS_TABLE + 1];
-
-    // See if any page is free
-    [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
-    while ([SYSTEM_STATUS_TABLE + 3] == 0) do
-        [PROCESS_TABLE + currentPID*16 + 4] = WAIT_MEM;
-        multipush(R1, R2);
-        call SCHEDULER;
-        multipop(R1, R2);
-    endwhile;
-    [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
-    [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
-    
-    // find a free Page
-    alias counter R3;
-    counter = 0;
-    while (counter < 128) do
-        if ([MEMORY_FREE_LIST + counter] == 0) then 
-            [MEMORY_FREE_LIST + counter] = 1;
-            R0 = counter;
-            break;
-        endif;
-        counter = counter + 1;
-    endwhile;
-    return;
-endif;
+     alias currentPID R2;
+     currentPID = [SYSTEM_STATUS_TABLE + 1];
+     // See if any page is free
+     [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
+     while ([SYSTEM_STATUS_TABLE + 2] == 1) do
+         [PROCESS_TABLE + currentPID*16 + 4] = WAIT_MEM;
+         multipush(R2);
+         call SCHEDULER;
+         multipop(R2);
+     endwhile;
+     [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
+     [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+     // Stage 22 - Assignment
+     alias maxMemUsed R1;
+     maxMemUsed = 128 - [SYSTEM_STATUS_TABLE + 2];
+     if (maxMemUsed > [assignPageAddr]) then
+        [assignPageAddr] = maxMemUsed;
+     endif;
+     // find a free Page
+     alias counter R3;
+     counter = 76;
+     while (counter < NUM_MEM_PAGES) do
+         if ([MEMORY_FREE_LIST + counter] == 0) then 
+             [MEMORY_FREE_LIST + counter] = 1;
+             R0 = counter;
+             break;
+         endif;
+         counter = counter + 1;
+     endwhile;
+     return;
+ endif;
 
 if (functionNum == RELEASE_PAGE) then
     alias pageNum R2;

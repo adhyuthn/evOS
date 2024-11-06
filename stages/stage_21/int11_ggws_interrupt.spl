@@ -30,10 +30,10 @@ if (sysCallNum == INT_WAIT) then
         call MOD_5;
         multipop(R0, R2, R3, R4);
         [physicalAddrRetVal] = 0;
-        call Exit_Interrupt;
+        goto Exit_Interrupt;
     else 
         [physicalAddrRetVal] = -1;
-        call Exit_Interrupt;
+        goto Exit_Interrupt;
     endif;
 endif;
 
@@ -50,17 +50,17 @@ if (sysCallNum == INT_SIGNAL) then
         waitPID = waitPID + 1;
     endwhile;
     [physicalAddrRetVal] = 0;
-    call Exit_Interrupt;
+    goto Exit_Interrupt;
 endif;
 
 if (sysCallNum == INT_GETPID) then
     [physicalAddrRetVal] = [PROCESS_TABLE + currentPID * 16 + 1];
-    call Exit_Interrupt;
+    goto Exit_Interrupt;
 endif;
 
 if (sysCallNum == INT_GETPPID) then
     [physicalAddrRetVal] = [PROCESS_TABLE + currentPID * 16 + 2];
-    call Exit_Interrupt;
+    goto Exit_Interrupt;
 endif;
 
 Exit_Interrupt:
