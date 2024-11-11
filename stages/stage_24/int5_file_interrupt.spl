@@ -1,0 +1,71 @@
+alias userSP R0;
+alias sysCallNum R1;
+alias physicalAddrRetVal R2;
+alias currentPID R3;
+userSP = SP;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+sysCallNum = [([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+// Stack switch 
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+if (sysCallNum == INT_OPEN) then
+    [PROCESS_TABLE + currentPID * 16 + 9] = INT_OPEN;
+    alias perProcessBase R4;
+    alias fileDesc R5;
+    alias fileName R1;
+    fileName = [([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    fileDesc = 0;
+    // Error code for no free per-process entry
+    [physicalAddrRetVal] = -3;
+    while (fileDesc < 8) do
+        // look for free entry in per-process table
+        if ([perProcessBase + fileDesc * 2] == -1) then
+            multipush(R0);
+            multipush(R2, R3, R4, R5);
+            R2 = fileName; // R1 = fileName
+            R1 = OPEN;
+            call FILE_MANAGER;
+            multipop(R2, R3, R4, R5);
+            [physicalAddrRetVal] = R0;
+            if (R0 >= 0) then
+                [perProcessBase + fileDesc * 2    ] = FILE;
+                [perProcessBase + fileDesc * 2 + 1] = R0;
+                [physicalAddrRetVal] = fileDesc;
+            endif;
+            multipop(R0);
+            break;
+        endif;
+        fileDesc = fileDesc + 1;
+    endwhile;
+    goto Exit_Interrupt;
+endif;
+
+if (sysCallNum == INT_CLOSE) then
+    alias fileDesc R4;
+    alias perProcessBase R5;
+    [PROCESS_TABLE + currentPID * 16 + 9] = INT_CLOSE;
+    fileDesc = [([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    if (fileDesc >= 0 &&
+        fileDesc <= 7 &&
+        [perProcessBase + fileDesc * 2] == FILE) then
+        multipush(R0, R2, R3, R4, R5);
+        R1 = CLOSE;
+        R2 = [perProcessBase + fileDesc * 2 + 1];
+        call FILE_MANAGER;
+        multipop(R0, R2, R3, R4, R5);
+        [perProcessBase + fileDesc * 2] = -1;
+        [physicalAddrRetVal] = 0;
+    else
+        [physicalAddrRetVal] = -1;
+    endif;
+    goto Exit_Interrupt;
+endif;
+
+Exit_Interrupt:
+[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+SP = userSP;
+ireturn;

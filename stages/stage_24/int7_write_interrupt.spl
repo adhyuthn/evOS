@@ -1,0 +1,41 @@
+//MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = INT_WRITE;
+
+alias userSP R0;
+userSP = SP;
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+// In Kernel mode. Do manual HAT
+alias fileDescriptor R1;
+fileDescriptor=[([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+alias physicalAddrRetVal R2;
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+if (fileDescriptor != -2)
+then
+    [physicalAddrRetVal] = -1;
+else
+    //code when argument 1 is valid
+    alias word R4;
+    word = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+    // Calling The write module
+    multipush(R0, R1, R2);
+    R1 = TERMINAL_WRITE;
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    R3 = word;
+    call DEVICE_MANAGER;
+    multipop(R0, R1, R2);
+    // set successfull return val
+    [physicalAddrRetVal] = 0;
+endif;
+
+SP = userSP;
+//MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+
+ireturn;
