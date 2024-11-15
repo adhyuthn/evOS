@@ -1,0 +1,30 @@
+int main() {
+decl
+    int temp, fileDesc;
+    str content;
+enddecl
+begin
+    fileDesc = exposcall( "Open", "root");
+    if (fileDesc < 0) then
+        temp = exposcall( "Write", -2, "Error" );
+        temp = exposcall( "Exit" );
+    endif;
+    while (1 == 1) do
+        temp = exposcall( "Read", fileDesc, content );
+        if (content == "-1") then
+            temp = exposcall( "Exit" );
+        endif;
+        if (temp == -1) then
+            temp = exposcall( "Write", -2, "Error" );
+            temp = exposcall( "Exit" );
+        else    
+        if (temp == -2) then
+            temp = exposcall( "Exit" );
+        endif;
+        endif;
+        temp = exposcall( "Seek", fileDesc, 7);
+        temp = exposcall( "Write", -2, content );
+    endwhile;
+    return 0;
+end
+}

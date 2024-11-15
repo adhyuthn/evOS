@@ -1,0 +1,33 @@
+int main() {
+decl
+    // Copy 1 -> 2
+    int temp, fileDesc1, fileDesc2;
+    str fileName1, fileName2, content;
+enddecl
+begin
+    temp = exposcall( "Write", -2, "Source file?" );
+    temp = exposcall( "Read", -1, fileName1 );
+    temp = exposcall( "Write", -2, "Dest. file?" );
+    temp = exposcall( "Read", -1, fileName2 );
+    fileDesc1 = exposcall( "Open", fileName1);
+    fileDesc2 = exposcall( "Open", fileName2);
+    if (fileDesc1 < 0 OR fileDesc2 < 0) then
+        temp = exposcall( "Write", -2, "[error!]" );
+        temp = exposcall( "Write", -2, "fd < 0" );
+        temp = exposcall( "Exit" );
+    endif;
+    while (1 == 1) do
+        temp = exposcall( "Read", fileDesc1, content );
+        if (temp == -1) then
+            temp = exposcall( "Write", -2, "Error" );
+            temp = exposcall( "Exit" );
+        else    
+        if (temp == -2) then
+            temp = exposcall( "Exit" );
+        endif;
+        endif;
+        temp = exposcall( "Write", fileDesc2, content );
+    endwhile;
+    return 0;
+end
+}
