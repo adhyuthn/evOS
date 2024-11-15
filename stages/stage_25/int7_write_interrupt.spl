@@ -1,0 +1,137 @@
+//MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = INT_WRITE;
+
+alias userSP R11;
+userSP = SP;
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+// In Kernel mode. Do manual HAT
+alias fileDescriptor R1;
+alias physicalAddrRetVal R2;
+fileDescriptor=[([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+alias currentPID R3;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+
+if (fileDescriptor != -2) then
+    if (fileDescriptor < 0 ||
+        fileDescriptor > 7) then
+        [physicalAddrRetVal] = -1;
+        goto Exit_Interrupt;
+    endif;
+    alias perProcessBase R4;
+    alias oftIndex R5;
+    alias inodeIndex R6;
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    if ([perProcessBase + fileDescriptor * 2] != FILE) then
+        [physicalAddrRetVal] = -1;
+        goto Exit_Interrupt;
+    endif;
+    oftIndex = [perProcessBase + fileDescriptor * 2 + 1];
+    inodeIndex = [OPEN_FILE_TABLE + oftIndex * 4 ];
+
+    // Can the process edit it?
+    if ([PROCESS_TABLE + currentPID * 16 + 3] != ROOT &&
+        [INODE_TABLE + inodeIndex * 16 + 3] != currentPID &&
+        [INODE_TABLE + inodeIndex * 16 + 4] == EXCLUSIVE) then
+        [physicalAddrRetVal] = -1;
+        goto Exit_Interrupt;
+    endif;
+    // ACQUIRE_INODE
+    multipush(R1, R2, R3, R4, R5, R6, R11);
+    R3 = currentPID; 
+    R2 = inodeIndex;
+    R1 = ACQUIRE_INODE;
+    call RESOURCE_MANAGER;
+    multipop(R1, R2, R3, R4, R5, R6, R11);
+    if (R0 == -1) then
+        [physicalAddrRetVal] = -1;
+        goto Exit_Interrupt;
+    endif;
+    alias lseek R7;
+    lseek = OPEN_FILE_TABLE + oftIndex * 4 + 2;
+    if ([lseek] == MAX_FILE_SIZE) then
+        multipush(R11, R2);
+        R3 = currentPID;
+        R2 = inodeIndex;
+        R1 = RELEASE_INODE;
+        call RESOURCE_MANAGER;
+        multipop(R11, R2);
+        [physicalAddrRetVal] = -2;
+        goto Exit_Interrupt;
+    endif;
+    // Check if new block required?
+    if ([lseek] % 512 == 0 && 
+        [lseek] == [INODE_TABLE + inodeIndex * 16 + 2]) then
+        multipush(R1, R2, R3, R4, R5, R6, R7, R11);
+        R1 = GET_FREE_BLOCK;
+        call MEMORY_MANAGER;
+        multipop(R1, R2, R3, R4, R5, R6, R7, R11);
+        if (R0 == -1) then 
+            [physicalAddrRetVal] = -2;
+            goto Exit_Interrupt;
+        endif;
+        // Set newly obtained disk block to INODE_TABLE 
+        [INODE_TABLE + inodeIndex * 16 + 8 + ([lseek] / 512)] = R0;
+    endif;
+
+    // Get disk block info corresponding to lseek 
+    alias lseekBlockNum R9;
+    alias lseekBlockOff R10;
+    alias word R8;
+    word = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+    lseekBlockNum = [INODE_TABLE + inodeIndex * 16 + 8] + ([lseek] / 512);
+    lseekBlockOff = [lseek] % 512;
+    // Write
+    multipush(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11);
+    R1 = BUFFERED_WRITE;
+    R2 = lseekBlockNum;
+    R3 = lseekBlockOff;
+    R4 = word;
+    call FILE_MANAGER;
+    multipop(R1, R2, R3, R4, R5, R6, R7, R8,  R9, R10, R11);
+    
+    // update size
+    if ([lseek] == [INODE_TABLE + inodeIndex * 16 + 2]) then
+        [INODE_TABLE + inodeIndex * 16 + 2] = [INODE_TABLE + inodeIndex * 16 + 2] + 1;
+        [ROOT_FILE + inodeIndex * 8 + 1] = [ROOT_FILE + inodeIndex * 8 + 1] + 1;
+    endif;
+    [lseek] = [lseek] + 1;
+
+    // RELEASE_INODE
+    multipush(R2,  R3, R4, R5, R6, R7, R8, R9, R10, R11);
+    R1 = RELEASE_INODE;
+    R2 = inodeIndex;
+    R3 = currentPID; 
+    call RESOURCE_MANAGER;
+    multipop(R2,  R3, R4, R5, R6, R7, R8, R9, R10, R11);
+    [physicalAddrRetVal] = 0;
+    goto Exit_Interrupt;
+        
+else
+    //write to terminal
+    alias word R4;
+    word = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+    // Calling The write module
+    multipush(R1, R2, R11);
+    R1 = TERMINAL_WRITE;
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    R3 = word;
+    call DEVICE_MANAGER;
+    multipop(R1, R2, R11);
+    // set successfull return val
+    [physicalAddrRetVal] = 0;
+    goto Exit_Interrupt;
+endif;
+
+Exit_Interrupt:
+SP = userSP;
+//MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+
+ireturn;

@@ -1,0 +1,87 @@
+alias userSP R0;
+alias currentPID R1;
+alias physicalAddrRetVal R2;
+
+userSP = SP;
+// Switcht to the kernel stack of the process
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+[PROCESS_TABLE + currentPID * 16 + 9] = INT_SHUTDOWN;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+// Why does docs say Shell process is pid 2?
+if (currentPID != 1 ||
+    [PROCESS_TABLE + currentPID * 16 + 3] != ROOT) then 
+    [physicalAddrRetVal] = -1;
+    goto Exit_Interrupt;
+endif;
+
+// Kill all user Processes
+multipush(R0, R1, R2);
+R2 = currentPID; // R1 is currentPID
+R1 = KILL_ALL;
+call PROCESS_MANAGER;
+multipop(R0, R1, R2);
+
+// Save all dirty buffers
+alias counter R3;
+counter = 0;
+while (counter < MAX_BUFFER) do 
+    if ([BUFFER_TABLE + counter * 4 + 1] == 1) then
+        multipush(R0, R1, R2, R3);
+        R2 = currentPID;
+        R1 = DISK_STORE; // R1 is currentPID
+        R4 = [BUFFER_TABLE + counter * 4]; // R3 is counter
+        R3 = BUFFER_BASE + counter;
+        call DEVICE_MANAGER;
+        multipop(R0, R1, R2, R3);
+    endif;
+    counter = counter + 1;
+endwhile;
+
+// SAVING :-
+multipush(R0, R2);
+// inode
+multipush(R1);
+R1 = DISK_STORE;
+R2 = currentPID;
+R3 = 59;
+R4 = 3;
+call DEVICE_MANAGER;
+multipop(R1);
+
+// user table
+multipush(R1);
+R1 = DISK_STORE;
+R2 = currentPID;
+R3 = 60;
+R4 = 4;
+call DEVICE_MANAGER;
+multipop(R1);
+
+// df list
+multipush(R1);
+R1 = DISK_STORE;
+R2 = currentPID;
+R3 = 61;
+R4 = 2;
+call DEVICE_MANAGER;
+multipop(R1);
+
+// root table 
+multipush(R1);
+R1 = DISK_STORE;
+R2 = currentPID;
+R3 = 62;
+R4 = 5;
+call DEVICE_MANAGER;
+multipop(R1);
+multipop(R0, R2);
+
+halt;
+
+Exit_Interrupt:
+[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+SP = userSP;
+ireturn;

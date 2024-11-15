@@ -1,0 +1,103 @@
+alias functionNum R1;
+
+if (functionNum == GET_FREE_PAGE) then
+     alias currentPID R2;
+     currentPID = [SYSTEM_STATUS_TABLE + 1];
+     // See if any page is free
+     [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
+     while ([SYSTEM_STATUS_TABLE + 2] == 1) do
+         [PROCESS_TABLE + currentPID*16 + 4] = WAIT_MEM;
+         multipush(R2);
+         call SCHEDULER;
+         multipop(R2);
+     endwhile;
+     [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
+     [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+     // find a free Page
+     alias counter R3;
+     counter = 76;
+     while (counter < NUM_MEM_PAGES) do
+         if ([MEMORY_FREE_LIST + counter] == 0) then 
+             [MEMORY_FREE_LIST + counter] = 1;
+             R0 = counter;
+             break;
+         endif;
+         counter = counter + 1;
+     endwhile;
+     return;
+ endif;
+
+if (functionNum == RELEASE_PAGE) then
+    alias pageNum R2;
+    [MEMORY_FREE_LIST + pageNum] = [MEMORY_FREE_LIST + pageNum] - 1;
+    if ([MEMORY_FREE_LIST + pageNum] == 0) then 
+        [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] + 1;
+    endif;
+    
+    alias counter R2;
+    counter = 0;
+    while (counter < MAX_PROC_NUM) do 
+        if ([PROCESS_TABLE + counter*16 + 4] == WAIT_MEM) then
+            [PROCESS_TABLE + counter*16 + 4] = READY;
+        endif;
+        counter = counter + 1;
+    endwhile;
+    return;
+endif;
+
+if (functionNum == GET_CODE_PAGE) then
+    alias pidCounter R9;
+    alias counter R10;
+    alias blockNum R2;
+    pidCounter = 0;
+    counter = 0;
+    // Check if already loaded
+    while (pidCounter < MAX_PROC_NUM) do 
+        counter = 0;
+        while (counter < 4) do 
+            if ([DISK_MAP_TABLE  + pidCounter * 10 + 4 + counter] == blockNum &&
+                [PAGE_TABLE_BASE + pidCounter * 20 + 8 + 2 * counter] != -1) then
+                    R0 = [PAGE_TABLE_BASE + pidCounter * 20 + 8 + 2 * counter];
+                    [MEMORY_FREE_LIST + R0] = [MEMORY_FREE_LIST + R0] + 1;
+                    return;
+            endif;
+            counter = counter + 1;
+        endwhile;
+        pidCounter = pidCounter + 1;
+    endwhile;
+    // else....
+    multipush(R1, R2);
+    R1 = GET_FREE_PAGE;
+    call MEMORY_MANAGER;
+    multipop(R1, R2);
+    multipush(R0, R1, R2);
+    R1 = DISK_LOAD;
+    R4 = R2;
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    R3 = R0;
+    call DEVICE_MANAGER;
+    multipop(R0, R1, R2);
+    return;
+endif;
+
+if (functionNum == RELEASE_BLOCK) then
+    alias blockNum R2;
+    [DISK_FREE_LIST  + blockNum] = 0;
+    return;
+endif;
+
+if (functionNum == GET_FREE_BLOCK) then
+    alias dfEntry R2;
+    dfEntry = DISK_FREE_AREA;
+    // User space is (Free Area) to (Swap Area - 1)
+    while (dfEntry < DISK_SWAP_AREA) do
+        if ([DISK_FREE_LIST + dfEntry] == 0) then
+            [DISK_FREE_LIST + dfEntry] = 1;
+            R0 = dfEntry;
+            return;
+        endif;
+        dfEntry = dfEntry + 1;
+    endwhile;
+    R0 = -1;
+    return;
+endif;

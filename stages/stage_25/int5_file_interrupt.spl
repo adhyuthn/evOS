@@ -1,0 +1,142 @@
+alias userSP R9;
+alias sysCallNum R1;
+alias physicalAddrRetVal R2;
+alias currentPID R3;
+userSP = SP;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+sysCallNum = [([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+// Stack switch 
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+if (sysCallNum == INT_OPEN) then
+    [PROCESS_TABLE + currentPID * 16 + 9] = INT_OPEN;
+    alias perProcessBase R4;
+    alias fileDesc R5;
+    alias fileName R1;
+    fileName = [([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    fileDesc = 0;
+    // Error code for no free per-process entry
+    [physicalAddrRetVal] = -3;
+    while (fileDesc < 8) do
+        // look for free entry in per-process table
+        if ([perProcessBase + fileDesc * 2] == -1) then
+            multipush(R2, R3, R4, R5, R9);
+            R2 = fileName; // R1 = fileName
+            R1 = OPEN;
+            call FILE_MANAGER;
+            multipop(R2, R3, R4, R5, R9);
+            [physicalAddrRetVal] = R0;
+            if (R0 >= 0) then
+                [perProcessBase + fileDesc * 2    ] = FILE;
+                [perProcessBase + fileDesc * 2 + 1] = R0;
+                [physicalAddrRetVal] = fileDesc;
+            endif;
+            break;
+        endif;
+        fileDesc = fileDesc + 1;
+    endwhile;
+    goto Exit_Interrupt;
+endif;
+
+if (sysCallNum == INT_CLOSE) then
+    alias fileDesc R4;
+    alias perProcessBase R5;
+    [PROCESS_TABLE + currentPID * 16 + 9] = INT_CLOSE;
+    fileDesc = [([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    if (fileDesc >= 0 &&
+        fileDesc <= 7 &&
+        [perProcessBase + fileDesc * 2] == FILE) then
+        multipush(R2, R3, R4, R5, R9);
+        R1 = CLOSE;
+        R2 = [perProcessBase + fileDesc * 2 + 1];
+        call FILE_MANAGER;
+        multipop(R2, R3, R4, R5, R9);
+        [perProcessBase + fileDesc * 2] = -1;
+        [physicalAddrRetVal] = 0;
+    else
+        [physicalAddrRetVal] = -1;
+        goto Exit_Interrupt;
+    endif;
+    goto Exit_Interrupt;
+endif;
+ 
+if (sysCallNum == INT_SEEK) then
+    alias fileDesc R4;
+    alias argOffset R5;
+    alias perProcessBase R6;
+    alias oftIndex R7;
+    alias inodeIndex R8;
+    alias lseek R1;
+    alias fileSize R10;
+    
+    [PROCESS_TABLE + currentPID * 16 + 9] = INT_SEEK;
+    fileDesc = [([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
+    argOffset = [([PTBR + 2 * ((userSP - 3)/ 512)] * 512) + (userSP - 3) % 512];
+    perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+    if (fileDesc >= 0 &&
+        fileDesc <= 7 &&
+        [perProcessBase + fileDesc * 2 ] == FILE) then
+        oftIndex = [perProcessBase + fileDesc * 2 + 1];
+        inodeIndex = [OPEN_FILE_TABLE + oftIndex * 4];
+        multipush(R1, R2, R3, R4, R5, R6, R7, R8, R9);
+        R1 = ACQUIRE_INODE;
+        R2 = inodeIndex;
+        R3 = currentPID;
+        call RESOURCE_MANAGER;
+        multipop(R1, R2, R3, R4, R5, R6, R7, R8, R9); 
+        if (R0 == -1) then
+            [physicalAddrRetVal] = -1;
+            goto Exit_Interrupt;
+        endif;
+        // Get fileSize
+        if ([OPEN_FILE_TABLE + oftIndex * 4] == INODE_ROOT) then
+            fileSize = 480;
+        else 
+            fileSize = [OPEN_FILE_TABLE + oftIndex * 4];
+        endif;
+        // new lseek validity
+        lseek = OPEN_FILE_TABLE + oftIndex * 4 + 2;
+        if (([lseek] + argOffset) < 0) then
+            multipush(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10);
+            R1 = RELEASE_INODE;
+            R2 = inodeIndex;
+            R3 = currentPID;
+            call RESOURCE_MANAGER;
+            multipop(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10);
+            [physicalAddrRetVal] = -2;
+            goto Exit_Interrupt;
+        endif;
+
+        // update lseek
+        if (argOffset == 0) then
+            [lseek] = 0;
+        else    
+            if (([lseek] + argOffset) > fileSize) then
+                [lseek] = fileSize; 
+            else 
+                [lseek] = [lseek] + argOffset;
+            endif;
+        endif;
+        multipush(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10);
+        R1 = RELEASE_INODE;
+        R2 = inodeIndex;
+        R3 = currentPID;
+        call RESOURCE_MANAGER;
+        multipop(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10);
+        [physicalAddrRetVal] = 0;
+        goto Exit_Interrupt;
+    else
+        // invalid fd
+        [physicalAddrRetVal] = -1;
+        goto Exit_Interrupt;
+    endif;
+endif;
+
+Exit_Interrupt:
+[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+SP = userSP;
+ireturn;
