@@ -99,8 +99,9 @@ if (functionNum == BUFFERED_READ) then
     R3 = currentPID;
     call RESOURCE_MANAGER;
     multipop(R2, R3, R4, R5, R6);
-    // Check if buffer table is occupied
-    if ([BUFFER_TABLE + buffNum * 4] != -1) then
+    // Check if buffer table is occupied by diff block
+    // blockNum could've been loaded before.
+    if ([BUFFER_TABLE + buffNum * 4] != blockNum) then
         // Dirty is set?
         if ([BUFFER_TABLE + buffNum * 4 + 1] == 1) then
             multipush(R2, R3, R4, R5, R6);
@@ -110,18 +111,19 @@ if (functionNum == BUFFERED_READ) then
             R3 = BUFFER_BASE + buffNum;
             call DEVICE_MANAGER;
             multipop(R2, R3, R4, R5, R6);
-        endif;
         [BUFFER_TABLE + buffNum * 4 + 1] = 0;
+        endif;
+        // Load into buffer table
+        multipush(R2, R3, R4, R5, R6);
+        R1 = DISK_LOAD;
+        R4 = blockNum;  // blockNum is R2
+        R2 = currentPID;
+        R3 = BUFFER_BASE + buffNum;
+        call DEVICE_MANAGER;
+        multipop(R2, R3, R4, R5, R6);
+        [BUFFER_TABLE + buffNum * 4] = blockNum;
     endif;
-    // Load into buffer table
-    multipush(R2, R3, R4, R5, R6);
-    R1 = DISK_LOAD;
-    R4 = blockNum;  // blockNum is R2
-    R2 = currentPID;
-    R3 = BUFFER_BASE + buffNum;
-    call DEVICE_MANAGER;
-    multipop(R2, R3, R4, R5, R6);
-    [BUFFER_TABLE + buffNum * 4] = blockNum;
+    // Copy to variable
     [phyBuffAddr] = [(BUFFER_BASE + buffNum) * 512 + blockOff];
     // Release buffer
     multipush(R2, R3, R4, R5, R6);

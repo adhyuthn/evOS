@@ -1,7 +1,5 @@
 alias functionNum R1;
 alias currentPID R2;
-// Checl later. Why R7? It should be R0, NO?
-alias returnValue R7;
 
 if (functionNum == TERMINAL_WRITE) then
     multipush(R1, R2);
@@ -15,7 +13,6 @@ if (functionNum == TERMINAL_WRITE) then
     R1 = RELEASE_TERMINAL;
     R2 = currentPID;
     call RESOURCE_MANAGER;
-    returnValue = R0;
     multipop(R1, R2);
     return;
 endif;

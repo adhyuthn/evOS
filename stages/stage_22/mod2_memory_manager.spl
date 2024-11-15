@@ -9,6 +9,7 @@ if (functionNum == GET_FREE_PAGE) then
      [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
      while ([SYSTEM_STATUS_TABLE + 2] == 1) do
          [PROCESS_TABLE + currentPID*16 + 4] = WAIT_MEM;
+         breakpoint;
          multipush(R2);
          call SCHEDULER;
          multipop(R2);

@@ -55,6 +55,7 @@ function EXPL() {
 
 function XSM() {
     cd $EXPOS_DIR/xsm
+    echo "Starting XSM..."
     clear
     ./xsm $@
     cd -

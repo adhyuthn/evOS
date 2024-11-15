@@ -15,6 +15,7 @@ begin
             if (childPid > 0) then 
                 temp = exposcall ("Wait", childPid);
             else 
+                temp = exposcall ("Write", -2, "--[START]--");
                 temp = exposcall ("Exec", progPath);
                 if (temp == -1) then
                     temp = exposcall ("Write", -2, "BAD COMMAND");
