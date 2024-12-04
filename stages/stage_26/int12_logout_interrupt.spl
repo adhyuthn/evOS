@@ -1,0 +1,32 @@
+// Change MODE to Login.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = INT_LOGOUT;
+alias userSP R11;
+userSP=SP;
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+alias currentPID R1;
+alias physicalAddrRetVal R2;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+// Only SHELL can call logout call
+if (currentPID != SHELL_PROCESS) then
+    [physicalAddrRetVal] = -1;
+endif;
+
+multipush(R11, R1, R2);
+R1 = KILL_ALL;
+R2 = currentPID;
+call PROCESS_MANAGER;
+multipop(R11, R1, R2);
+
+[PROCESS_MANAGER + currentPID * 16 + 4] = TERMINATED;
+// Setup SHELL program Stack
+[[PTBR + 8 * 2] * 512] = [[PTBR + 4 * 2] * 512 + 1];
+[PROCESS_TABLE + currentPID * 16 + 13] = 4096;
+
+[PROCESS_TABLE + 1 * 16 + 4] = READY;
+[SYSTEM_STATUS_TABLE] = KERNEL;
+call SCHEDULER;

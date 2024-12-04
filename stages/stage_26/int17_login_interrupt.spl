@@ -1,0 +1,57 @@
+// Change MODE to Login.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = INT_LOGIN;
+alias userSP R11;
+userSP=SP;
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+alias currentPID R1;
+alias physicalAddrRetVal R2;
+alias userIndex R3;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+// Only INIT can call login call
+if (currentPID != 1) then
+    [physicalAddrRetVal] = -2;
+endif;
+
+alias argUserName R4;
+alias argUserPwd  R5;
+argUserName = [[PTBR + 2 * ((userSP - 4)/ 512)] * 512 + (userSP - 4) % 512 ];
+argUserPwd  = [[PTBR + 2 * ((userSP - 3)/ 512)] * 512 + (userSP - 3) % 512 ];
+
+userIndex  = 0;
+while (userIndex < MAX_USER_NUM) do
+    if ([USER_TABLE + userIndex * 2] == argUserName ) then
+        break;
+    endif;
+    userIndex = userIndex + 1;
+endwhile;
+// User entry not found
+if (userIndex == MAX_USER_NUM) then
+    [physicalAddrRetVal] = -1;
+endif;
+// argUserPwd is wrong
+encrypt argUserPwd;
+if (argUserPwd != [USER_TABLE + userIndex * 2 + 1]) then
+    [physicalAddrRetVal] = -1;
+endif;
+// Init Shell Process
+[PROCESS_TABLE + 2 * 16 + 4] = CREATED;
+[PROCESS_TABLE + 2 * 16 + 3] = userIndex;
+
+// Sleep INIT
+[PROCESS_TABLE + 16 + 4] = WAIT_PROCESS;
+[PROCESS_TABLE + 16 + 5] = 2;
+
+[SYSTEM_STATUS_TABLE + 0] = userIndex;
+multipush(R11);
+call SCHEDULER;
+multipop(R11);
+
+SP = userSP;
+//MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+ireturn;
