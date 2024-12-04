@@ -119,6 +119,7 @@ if (functionNum == RELEASE_INODE) then
     // lock
     [FILE_STATUS_TABLE + index * 4] = -1;
     // Wakeup process who ewnt to sleep
+    counter = 1;
     while (counter < 16) do 
         if ([PROCESS_TABLE + counter * 16 + 4] == WAIT_FILE &&
             [PROCESS_TABLE + counter * 16 + 5] == index) then

@@ -16,6 +16,11 @@ begin
         temp = exposcall( "Read", -1, content );
         if (content == ":q") then
             temp = exposcall( "Exit" );
+        else 
+        if (content == ":a") then
+            temp = exposcall( "Seek", fileDesc, 3000);
+            continue;
+        endif; 
         endif;
         if (temp == -2) then
             temp = exposcall( "Exit" );

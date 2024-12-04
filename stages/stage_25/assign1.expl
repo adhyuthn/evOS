@@ -15,12 +15,15 @@ begin
         temp = exposcall( "Exit" );
     endif;
     content = 1;
-    while (content <= 1100) do
+    while (content <= 10) do
         temp = exposcall( "Write", fileDesc, content);
         content = content + 1;
     endwhile;
-    while (temp != -2) do
+    while (1 == 1) do
         temp = exposcall ("Seek", fileDesc, -1);
+        if (temp == -2) then
+            break;
+        endif;
         temp = exposcall ("Read", fileDesc, content);
         temp = exposcall ("Write", -2, content);
         temp = exposcall ("Seek", fileDesc, -1);

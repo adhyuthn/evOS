@@ -142,7 +142,6 @@ endwhile;
 counter = 0;
 while (counter < MAX_OPENFILE_NUM) do
     [OPEN_FILE_TABLE + counter * 4] = -1;
-    [OPEN_FILE_TABLE + counter * 4 + 1] = -1;
     counter = counter + 1;
 endwhile;
 
@@ -203,7 +202,7 @@ PTLR = 10;
 // PID of process
 [PROCESS_TABLE + 17] = 1;
 // USER ID 
-[PROCESS_TABLE + 19] = 1;
+[PROCESS_TABLE + 19] = ROOT;
 // STATE of the INIT process state is set to RUNNING
 [PROCESS_TABLE + 20] = CREATED;
 // User Area

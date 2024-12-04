@@ -75,7 +75,6 @@ if (sysCallNum == INT_SEEK) then
     
     [PROCESS_TABLE + currentPID * 16 + 9] = INT_SEEK;
     fileDesc = [([PTBR + 2 * ((userSP - 4)/ 512)] * 512) + (userSP - 4) % 512];
-    argOffset = [([PTBR + 2 * ((userSP - 3)/ 512)] * 512) + (userSP - 3) % 512];
     perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
     if (fileDesc >= 0 &&
         fileDesc <= 7 &&
@@ -96,9 +95,10 @@ if (sysCallNum == INT_SEEK) then
         if ([OPEN_FILE_TABLE + oftIndex * 4] == INODE_ROOT) then
             fileSize = 480;
         else 
-            fileSize = [OPEN_FILE_TABLE + oftIndex * 4];
+            fileSize = [INODE_TABLE + inodeIndex * 16 + 2];
         endif;
         // new lseek validity
+        argOffset = [([PTBR + 2 * ((userSP - 3)/ 512)] * 512) + (userSP - 3) % 512];
         lseek = OPEN_FILE_TABLE + oftIndex * 4 + 2;
         if (([lseek] + argOffset) < 0) then
             multipush(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10);

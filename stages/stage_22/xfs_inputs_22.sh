@@ -12,6 +12,7 @@ load --int=10       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int10_halt_i
 load --int=11       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int11_ggws_interrupt.xsm
 load --int=13       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int13_semaphore_interrupt.xsm
 load --int=14       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int14_semaphore_interrupt.xsm
+#load --int=14       /home/evoprime/Athena/PROJ/evOS/stages/stage_25/int14_semaphore_interrupt.xsm
 load --int=15       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int15_shutdown_interrupt.xsm
 load --int=18       /home/evoprime/Athena/PROJ/evOS/stages/stage_22/int18_assign_interrupt.xsm
 load --exhandler    /home/evoprime/Athena/PROJ/evOS/stages/stage_22/exhandler.xsm

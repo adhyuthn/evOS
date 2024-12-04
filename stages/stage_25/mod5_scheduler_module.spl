@@ -14,11 +14,6 @@ newPID = currentPID;
 
 while(1) do
     newPID = ( newPID + 1 ) % MAX_PROC_NUM;
-    //print "--------";
-    //print newPID;
-    //print currentPID;
-    //print [PROCESS_TABLE + newPID * 16 + 4];
-    //print "--------";
     if (newPID == currentPID) then
         newPID = 0;
         break;
@@ -29,11 +24,18 @@ while(1) do
     endif;
 endwhile;
 
+
 processTableEntry = PROCESS_TABLE + newPID * 16;
-SP = [processTableEntry + 11] * 512 + [processTableEntry + 12];
 PTBR = [processTableEntry + 14];
 PTLR = [processTableEntry + 15];
 [SYSTEM_STATUS_TABLE + 1] = newPID;
+
+//print "--------";
+//print "new:";
+//print newPID;
+//print "prev:";
+//print currentPID;
+//print "--------";
 
 // If CREATED, then process has no history, return directly to the user Stack.
 if([processTableEntry + 4] == CREATED) then
@@ -44,6 +46,8 @@ if([processTableEntry + 4] == CREATED) then
 	ireturn;
 endif;
 
+SP = [processTableEntry + 11] * 512 + [processTableEntry + 12];
 [processTableEntry + 4] = RUNNING;
+
 multipop(BP);
 return;

@@ -13,6 +13,7 @@ physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) %
 
 // Switcht to the kernel stack of the process
 SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+//---------------------------------------------------
 
 if (sysCallNum == INT_SEMGET) then
     alias perProcessBase R4;

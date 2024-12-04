@@ -31,7 +31,8 @@ load --exec         /home/evoprime/Athena/PROJ/evOS/shell-utils/cat.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/shell-utils/cp.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/shell-utils/rm.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/shell-utils/ed.xsm
-# load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_25/assign1.xsm
+load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_25/assign1.xsm
+load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_25/assign2.xsm
 load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_25/assign3.xsm
 #load --exec         /home/evoprime/Athena/PROJ/evOS/stages/stage_25/assign4.xsm
 load --data         /home/evoprime/Athena/PROJ/evOS/data/sample.dat
