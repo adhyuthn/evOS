@@ -15,6 +15,7 @@ physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) %
 // Only INIT can call login call
 if (currentPID != 1) then
     [physicalAddrRetVal] = -2;
+    goto Exit_Interrupt;
 endif;
 
 alias argUserName R4;
@@ -32,11 +33,13 @@ endwhile;
 // User entry not found
 if (userIndex == MAX_USER_NUM) then
     [physicalAddrRetVal] = -1;
+    goto Exit_Interrupt;
 endif;
 // argUserPwd is wrong
 encrypt argUserPwd;
 if (argUserPwd != [USER_TABLE + userIndex * 2 + 1]) then
     [physicalAddrRetVal] = -1;
+    goto Exit_Interrupt;
 endif;
 // Init Shell Process
 [PROCESS_TABLE + 2 * 16 + 4] = CREATED;
@@ -51,6 +54,7 @@ multipush(R11);
 call SCHEDULER;
 multipop(R11);
 
+Exit_Interrupt:
 SP = userSP;
 //MODE FLAG
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;

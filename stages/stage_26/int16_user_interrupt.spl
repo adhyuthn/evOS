@@ -1,4 +1,4 @@
-alias userSP R0;
+alias userSP R11;
 alias sysCallNum R1;
 alias physicalAddrRetVal R2;
 alias currentPID R3;
@@ -25,8 +25,8 @@ if (sysCallNum == INT_NEWUSR) then
     alias argUserPswd R5;
     alias userEntry R6;
     userEntry = 0;
-    argUserName = ([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512);
-    argUserPswd = ([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512);
+    argUserName = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+    argUserPswd = [([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512)];
     // Check existting entries
     while (userEntry < MAX_USER_NUM) do
         if ([USER_TABLE + userEntry * 2] == argUserName) then
@@ -51,7 +51,6 @@ if (sysCallNum == INT_NEWUSR) then
     encrypt argUserPswd;
     [USER_TABLE + userEntry * 2     ] = argUserName;
     [USER_TABLE + userEntry * 2 + 1 ] = argUserPswd;
-    [PROCESS_TABLE + currentPID * 16 + 9] = 0;
     [physicalAddrRetVal] = 0;
     goto Exit_Interrupt;
 endif;
@@ -61,15 +60,14 @@ if (sysCallNum == INT_REMUSR) then
     alias argUserName R4;
     alias userEntry R5;
     alias counter R6;
-    argUserName = ([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512);
-    // Must have - PID = 2 and UID = ROOT
+    // Must have : PID = 2 and UID = ROOT
     if ([SYSTEM_STATUS_TABLE] != ROOT || 
         currentPID != SHELL_PROCESS) then
         [physicalAddrRetVal] = -2;
         goto Exit_Interrupt;
     endif;
     // ROOT and KERNEL cannot be removed
-    argUserName = ([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512);
+    argUserName = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
     if (argUserName == "root" ||
         argUserName == "kernel") then
         [physicalAddrRetVal] = -2;
@@ -98,7 +96,6 @@ if (sysCallNum == INT_REMUSR) then
     // Invalidate userEntry
     [USER_TABLE + userEntry * 2    ] = -1;
     [USER_TABLE + userEntry * 2 + 1] = -1;
-    [PROCESS_TABLE + currentPID * 16 + 9] = 0;
     [physicalAddrRetVal] = 0;
     goto Exit_Interrupt;
 endif;
@@ -113,8 +110,8 @@ if (sysCallNum == INT_SETPWD) then
         [physicalAddrRetVal] = -1;
         goto Exit_Interrupt;
     endif;
-    argUserName = ([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512);
-    argUserPswd = ([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512);
+    argUserName = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+    argUserPswd = [([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512)];
     // Find userEntry
     userEntry = 0;
     while (userEntry < MAX_USER_NUM) do
@@ -137,7 +134,6 @@ if (sysCallNum == INT_SETPWD) then
     // Update PSWD
     encrypt argUserPswd;
     [USER_TABLE + userEntry * 2 + 1] = argUserPswd;
-    [PROCESS_TABLE + currentPID * 16 + 9] = 0;
     [physicalAddrRetVal] = 0;
     goto Exit_Interrupt;
 endif;
@@ -146,7 +142,7 @@ if (sysCallNum == INT_GETUID) then
     [PROCESS_TABLE + currentPID * 16 + 9] = INT_GETUID;
     alias argUserName R4;
     alias userEntry R5;
-    argUserName = ([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512);
+    argUserName = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
     userEntry = 0;
     while (userEntry < MAX_USER_NUM) do
         if ([USER_TABLE + userEntry * 2] == argUserName) then
@@ -163,7 +159,7 @@ endif;
 if (sysCallNum == INT_GETUNAME) then
     [PROCESS_TABLE + currentPID * 16 + 9] = INT_GETUNAME;
     alias argUserEntry R4;
-    argUserEntry = ([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512);
+    argUserEntry = [([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
     // argUserEntry is invalid
     if (argUserEntry < 0 || 
         argUserEntry > 15 || 
@@ -176,9 +172,7 @@ if (sysCallNum == INT_GETUNAME) then
     goto Exit_Interrupt;
 endif;
 
-
 Exit_Interrupt:
 [PROCESS_TABLE + currentPID * 16 + 9] = 0;
 SP = userSP;
 ireturn;
-

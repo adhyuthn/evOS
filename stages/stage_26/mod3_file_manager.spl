@@ -1,0 +1,188 @@
+alias functionNum R1;
+
+if (functionNum == OPEN) then
+    alias fileName R2;
+    alias index R3;
+    alias currentPID R4;
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
+    index = 0;
+    // If file not found
+    R0 = -1;
+    while (index < MAX_FILE_NUM) do 
+        if ([INODE_TABLE + index * 16 + 1] == fileName) then
+            multipush(R2, R3, R4);
+            R1 = ACQUIRE_INODE;
+            R2 = index;
+            R3 = currentPID; 
+            // Can't lock
+            call RESOURCE_MANAGER;
+            if (R0 == -1) then
+                return;
+            endif;
+            multipop(R2, R3, R4);
+            // Not DATA
+            if ([INODE_TABLE + index * 16] == EXEC) then
+                R0 = -1;
+                return;
+            endif;
+            alias oftIndex R1;
+            oftIndex = 0;
+            // If OFT index isn't available
+            R0 = -2;
+            while (oftIndex < MAX_OPENFILE_NUM) do
+                // find free OFT entry
+                if ([OPEN_FILE_TABLE + oftIndex * 4] == -1) then
+                    if (fileName == "root") then
+                        [OPEN_FILE_TABLE + oftIndex * 4] = INODE_ROOT;
+                    else
+                        // Chek if already opened
+                        if ([FILE_STATUS_TABLE + index * 4 + 1] == -1) then
+                            [FILE_STATUS_TABLE + index * 4 + 1] = 1;
+                        else
+                            [FILE_STATUS_TABLE + index * 4 + 1] = [FILE_STATUS_TABLE + index * 4 + 1] + 1;
+                        endif;
+                        [OPEN_FILE_TABLE + oftIndex * 4] = index;
+                    endif;
+                    [OPEN_FILE_TABLE + oftIndex * 4 + 1] = 1;
+                    [OPEN_FILE_TABLE + oftIndex * 4 + 2] = 0;
+                    // Release inode 
+                    multipush(R1);
+                    R1 = RELEASE_INODE;
+                    R2 = index;
+                    R3 = currentPID;
+                    call RESOURCE_MANAGER;
+                    multipop(R1);
+                    R0 = oftIndex;
+                    return;
+                endif;
+                oftIndex = oftIndex + 1;
+            endwhile;
+        endif;
+        index = index + 1;
+    endwhile;
+    return;
+endif;
+
+if (functionNum == CLOSE) then
+    alias oftIndex R2;
+    alias index R3;
+    index = [OPEN_FILE_TABLE + oftIndex * 4 ];
+    [OPEN_FILE_TABLE + oftIndex *  4 + 1] = [OPEN_FILE_TABLE + oftIndex * 4 + 1] - 1;
+    // if File no more open
+    if ([OPEN_FILE_TABLE + oftIndex * 4 + 1] == 0) then
+        // invalidate all entries
+        [OPEN_FILE_TABLE + oftIndex * 4    ] = -1;
+        [OPEN_FILE_TABLE + oftIndex * 4 + 1] = -1;
+        [OPEN_FILE_TABLE + oftIndex * 4 + 2] = -1;
+        if (index != INODE_ROOT) then
+            [FILE_STATUS_TABLE + index * 4 + 1] = [FILE_STATUS_TABLE + index * 4 + 1] - 1;
+            if ([FILE_STATUS_TABLE + index * 4 + 1] == 0) then
+                [FILE_STATUS_TABLE + index * 4 + 1] = -1;
+            endif;
+        endif;
+    endif;
+    return;
+endif;
+
+if (functionNum == BUFFERED_READ) then
+    alias blockNum R2; 
+    alias blockOff R3; 
+    alias phyBuffAddr R4; 
+    alias buffNum R5; 
+    alias currentPID R6; 
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
+    buffNum = blockNum % 4;
+    // Acquire buffer
+    multipush(R2, R3, R4, R5, R6);
+    R1 = ACQUIRE_BUFFER;
+    R2 = buffNum;
+    R3 = currentPID;
+    call RESOURCE_MANAGER;
+    multipop(R2, R3, R4, R5, R6);
+    // Check if buffer table is occupied by diff block
+    // blockNum could've been loaded before.
+    if ([BUFFER_TABLE + buffNum * 4] != blockNum) then
+        // Dirty is set?
+        if ([BUFFER_TABLE + buffNum * 4 + 1] == 1) then
+            multipush(R2, R3, R4, R5, R6);
+            R1 = DISK_STORE;
+            R4 = blockNum;  // blockNum is R2
+            R2 = currentPID;
+            R3 = BUFFER_BASE + buffNum;
+            call DEVICE_MANAGER;
+            multipop(R2, R3, R4, R5, R6);
+            [BUFFER_TABLE + buffNum * 4 + 1] = 0;
+        endif;
+        // Load into buffer table
+        multipush(R2, R3, R4, R5, R6);
+        R1 = DISK_LOAD;
+        R4 = blockNum;  // blockNum is R2
+        R2 = currentPID;
+        R3 = BUFFER_BASE + buffNum;
+        call DEVICE_MANAGER;
+        multipop(R2, R3, R4, R5, R6);
+        [BUFFER_TABLE + buffNum * 4] = blockNum;
+    endif;
+    // Copy to variable
+    [phyBuffAddr] = [(BUFFER_BASE + buffNum) * 512 + blockOff];
+    // Release buffer
+    multipush(R2, R3, R4, R5, R6);
+    R1 = RELEASE_BUFFER;
+    R2 = buffNum;
+    R3 = currentPID;
+    call RESOURCE_MANAGER;
+    multipop(R2, R3, R4, R5, R6);
+    return;
+endif;
+
+if (functionNum == BUFFERED_WRITE) then
+    alias blockNum R2; 
+    alias blockOff R3; 
+    alias word R4; 
+    alias buffNum R5;
+    alias currentPID R6;
+    buffNum = blockNum % 4;
+    currentPID = [SYSTEM_STATUS_TABLE + 1];
+    // Acquire buffer
+    multipush(R2, R3, R4, R5, R6);
+    R1 = ACQUIRE_BUFFER;
+    R2 = buffNum;
+    R3 = currentPID;
+    call RESOURCE_MANAGER;
+    multipop(R2, R3, R4, R5, R6);
+
+    // Check if buffer table is occupied by diff block
+    // *blockNum could've been loaded before.
+    if ([BUFFER_TABLE + buffNum * 4] != blockNum) then
+        // Dirty is set?
+        if ([BUFFER_TABLE + buffNum * 4 + 1] == 1) then
+            multipush(R2, R3, R4, R5, R6);
+            R1 = DISK_STORE;
+            R4 = [BUFFER_TABLE + buffNum * 4];  // blockNum is R2
+            R2 = currentPID;
+            R3 = BUFFER_BASE + buffNum;
+            call DEVICE_MANAGER;
+            multipop(R2, R3, R4, R5, R6);
+        endif;
+        // Load into buffer table
+        multipush(R2, R3, R4, R5, R6);
+        R1 = DISK_LOAD;
+        R4 = blockNum;  // blockNum is R2
+        R2 = currentPID;
+        R3 = BUFFER_BASE + buffNum;
+        call DEVICE_MANAGER;
+        multipop(R2, R3, R4, R5, R6);
+        [BUFFER_TABLE + buffNum * 4] = blockNum;
+    endif;
+    // write to buffer location and set DIRTY
+    [(BUFFER_BASE + buffNum) * 512 + blockOff] = word;
+    [BUFFER_TABLE + buffNum * 4 + 1] = 1;
+    // Release buffer
+    multipush(R2, R3, R4, R5, R6);
+    R1 = RELEASE_BUFFER;
+    R2 = buffNum;
+    R3 = currentPID;
+    call RESOURCE_MANAGER;
+    multipop(R2, R3, R4, R5, R6);
+    return;
+endif;

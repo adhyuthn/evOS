@@ -1,0 +1,318 @@
+define maxPageUsed 80; // IDLE process too.
+
+// load Disk Free list
+loadi(61, 2);
+
+// load INODE and user table 
+loadi(59, 3);
+loadi(60, 4);
+
+// load root file
+loadi(62, 5);
+
+// load init code
+loadi(65, 7);
+
+// load shell code
+loadi(67, 9);
+loadi(68, 10);
+
+// load libs
+loadi(63, 13);
+loadi(64, 14);
+
+// load Exhandler
+loadi(2, 15);
+loadi(3, 16);
+
+// load timer interrupt
+loadi(4, 17);
+loadi(5, 18);
+
+//load disk interrupt
+loadi(6,19);
+loadi(7,20);
+
+// load console interrupt
+loadi(8, 21);
+loadi(9, 22);
+
+// load INT 4 file interrupt
+loadi(10, 23);
+loadi(11, 24);
+
+// load INT 5 file interrupt
+loadi(12, 25);
+loadi(13, 26);
+
+// load INT 6 read interrupt
+loadi(14, 27);
+loadi(15, 28);
+
+// load INT 7 write interrupt
+loadi(16,29);
+loadi(17,30);
+
+// load INT 8 write interrupt
+loadi(18,31);
+loadi(19,32);
+
+// load INT 9 exec interrupt
+loadi(20,33);
+loadi(21,34);
+
+// load INT 10 halt interrupt
+loadi(22,35);
+loadi(23,36);
+
+// load INT 11 ggws
+loadi(24,37);
+loadi(25,38);
+
+// load INT 12 logout
+loadi(26,39);
+loadi(27,40);
+
+// load INT 13 Semaphore
+loadi(28,41);
+loadi(29,42);
+
+// load INT 14 Semaphore
+loadi(30,43);
+loadi(31,44);
+
+// load INT 15 shutdown
+loadi(32,45);
+loadi(33,46);
+
+// load INT 16 user
+loadi(34,47);
+loadi(35,48);
+
+// load INT 17 login
+loadi(36,49);
+loadi(37,50);
+
+// load MOD0 - Resource Manager
+loadi(40,53);
+loadi(41,54);
+
+// load MOD1 - Process Manager
+loadi(42,55);
+loadi(43,56);
+
+// load MOD2 - Memory Manager
+loadi(44,57);
+loadi(45,58);
+
+// load MOD3 - File Manager
+loadi(46,59);
+loadi(47,60);
+
+// load MOD4 - Device Manager
+loadi(48,61);
+loadi(49,62);
+
+// load MOD5 - Scheduler
+loadi(50,63);
+loadi(51,64);
+
+alias counter R0;
+// Initialize by setting STATE field of all PCBs to TERMINATED
+counter = 0;
+while(counter < MAX_PROC_NUM) do 
+    [PROCESS_TABLE + counter * 16 + 4 ] = TERMINATED;
+    counter = counter + 1;
+endwhile;
+
+// Initialize MEMORY_FREE_LIST
+counter = 0;
+while(counter <= maxPageUsed) do 
+    [MEMORY_FREE_LIST + counter] = 1;
+    counter = counter + 1;
+endwhile;
+while(counter < NUM_MEM_PAGES) do 
+    [MEMORY_FREE_LIST + counter] = 0;
+    counter = counter + 1;
+endwhile;
+
+// Initialize Semaphore Table
+counter = 0;
+while (counter < MAX_SEM_COUNT) do
+    [SEMAPHORE_TABLE + counter * 4] = -1;
+    [SEMAPHORE_TABLE + counter * 4 + 1] = 0;
+    counter = counter + 1;
+endwhile;
+
+// Initialize File status table
+counter = 0;
+while (counter < MAX_FILE_NUM) do
+    [FILE_STATUS_TABLE + counter * 4] = -1;
+    [FILE_STATUS_TABLE + counter * 4 + 1] = -1;
+    counter = counter + 1;
+endwhile;
+
+// Initialize Open file table
+counter = 0;
+while (counter < MAX_OPENFILE_NUM) do
+    [OPEN_FILE_TABLE + counter * 4] = -1;
+    counter = counter + 1;
+endwhile;
+
+// Initialize Buffer Table
+counter = 0;
+while (counter < MAX_BUFFER) do
+    [BUFFER_TABLE + counter * 4     ] = -1;
+    [BUFFER_TABLE + counter * 4 + 1 ] =  0;
+    [BUFFER_TABLE + counter * 4 + 2 ] = -1;
+    counter = counter + 1;
+endwhile;
+
+// Initialize WAIT_MEM_COUNT and MEM_FREE_COUNT
+[SYSTEM_STATUS_TABLE + 2] = NUM_MEM_PAGES - (maxPageUsed + 1); 
+[SYSTEM_STATUS_TABLE + 3] = 0; 
+
+// Initialize Terminal Status table
+[TERMINAL_STATUS_TABLE + 0] = 0;
+// Initialize DISK Status table
+[DISK_STATUS_TABLE + 0] = 0;
+
+// ----------PROCESS SETUP----------------
+
+// INIT PROCESS SETUP
+PTBR = PAGE_TABLE_BASE + 20;
+PTLR = 10;
+
+//INIT's PAGE TABLE
+// user Lib space
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+// user Heap space
+[PTBR+4] = -1;
+[PTBR+5] = "0000";
+[PTBR+6] = -1;
+[PTBR+7] = "0000";
+
+// user Code space
+[PTBR+8] = 65;
+[PTBR+9] = "0100";
+[PTBR+10] = -1;
+[PTBR+11] = "0000";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+// user Stack space
+[PTBR+16] = 66;
+[PTBR+17] = "0110";
+[PTBR+18] = -1;
+[PTBR+19] = "0110";
+
+// Setup Process Table
+// PID of process
+[PROCESS_TABLE + 17] = INIT_PROCESS;
+// USER ID 
+[PROCESS_TABLE + 19] = KERNEL;
+// STATE of the INIT process state is set to RUNNING
+[PROCESS_TABLE + 20] = CREATED;
+// User Area
+[PROCESS_TABLE + 27] = 77;
+// KPTR of IDLE
+[PROCESS_TABLE + 28] = 0;
+// UPTR
+[PROCESS_TABLE + 29] = 8 * 512;
+// PTBR
+[PROCESS_TABLE + 30] = PAGE_TABLE_BASE + 20;
+// PTLR
+[PROCESS_TABLE + 31] = 10;
+
+// PER-PROCESS TABLE for init
+alias perProcessTableBase R1;
+counter = 0;
+perProcessTableBase = [PROCESS_TABLE + 27] * 512 + RESOURCE_TABLE_OFFSET;
+while(counter < 8) do
+    [perProcessTableBase + counter * 2] = -1;
+    counter = counter + 1;
+endwhile;
+
+[66 * 512] = [65 * 512 + 1];
+
+//............................
+
+// SHELL PROCESS SETUP
+PTBR = PAGE_TABLE_BASE + 40;
+
+//SHELL's PAGE TABLE
+// user Lib space
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+// user Heap space
+[PTBR+4] = -1;
+[PTBR+5] = "0000";
+[PTBR+6] = -1;
+[PTBR+7] = "0000";
+
+// user Code space
+[PTBR+8] = 67;
+[PTBR+9] = "0100";
+[PTBR+10] = 68;
+[PTBR+11] = "0100";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+// user Stack space
+[PTBR+16] = 78;
+[PTBR+17] = "0110";
+[PTBR+18] = 79;
+[PTBR+19] = "0110";
+
+// Setup Process Table
+// PID of process
+[PROCESS_TABLE + 33] = SHELL_PROCESS;
+// PPID of process
+[PROCESS_TABLE + 34] = INIT_PROCESS;
+// USER ID 
+[PROCESS_TABLE + 35] = KERNEL;
+// STATE of the SHELL process state is set to TERMINATED
+[PROCESS_TABLE + 36] = TERMINATED;
+// User Area
+[PROCESS_TABLE + 43] = 80;
+// KPTR of IDLE
+[PROCESS_TABLE + 44] = 0;
+// UPTR
+[PROCESS_TABLE + 45] = 8*512;
+// PTBR
+[PROCESS_TABLE + 46] = PAGE_TABLE_BASE + 40;
+// PTLR
+[PROCESS_TABLE + 47] = 10;
+
+// PER-PROCESS TABLE for SHELL
+counter = 0;
+perProcessTableBase = [PROCESS_TABLE + 43] * 512 + RESOURCE_TABLE_OFFSET;
+while(counter < 8) do
+    [perProcessTableBase + counter * 2] = -1;
+    counter = counter + 1;
+endwhile;
+
+// Initialize DISK MAP TABLE 
+[DISK_MAP_TABLE + 22] = -1;
+[DISK_MAP_TABLE + 23] = -1;
+[DISK_MAP_TABLE + 24] =  9;
+[DISK_MAP_TABLE + 25] = 10;
+[DISK_MAP_TABLE + 26] = -1;
+[DISK_MAP_TABLE + 27] = -1;
+[DISK_MAP_TABLE + 28] = -1;
+[DISK_MAP_TABLE + 29] = -1;
+
+[78 * 512] = [67 * 512 + 1];
+
+return;
