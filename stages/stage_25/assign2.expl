@@ -1,0 +1,32 @@
+int main() {
+decl
+    int temp, filePerms, content, fileDesc;
+    str fileName;
+enddecl
+begin
+    temp = exposcall( "Write", -2, "File Name?" );
+    temp = exposcall( "Read", -1, fileName );
+    fileDesc = exposcall( "Open", fileName );
+    if (fileDesc < 0) then
+        temp = exposcall( "Write", -2, "Error" );
+        temp = exposcall( "Exit" );
+    endif;
+    // move lseek to end of file
+    temp = exposcall ("Seek", fileDesc, 3000);
+    content = 20;
+    while (content <= 25) do
+        temp = exposcall( "Write", fileDesc, content);
+        content = content + 1;
+    endwhile;
+    while (1 == 1) do
+        temp = exposcall ("Seek", fileDesc, -1);
+        if (temp == -2) then
+            break;
+        endif;
+        temp = exposcall ("Read", fileDesc, content);
+        temp = exposcall ("Write", -2, content);
+        temp = exposcall ("Seek", fileDesc, -1);
+    endwhile;
+    return 0;
+end
+}
