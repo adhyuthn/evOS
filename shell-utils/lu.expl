@@ -1,0 +1,15 @@
+int main() {
+decl
+    int temp, userEntry, userName;
+enddecl
+begin
+    userEntry = 0;
+    while (userEntry < 16) do 
+        userName = exposcall ("Getuname", userEntry);
+        temp = exposcall ("Write", -2, userName);
+        userEntry = userEntry + 1;
+    endwhile;
+    temp = exposcall( "Exit" );
+    return 0;
+end
+}

@@ -1,0 +1,24 @@
+int main()
+{
+decl
+    int temp;
+    str userName, userPswd;
+enddecl
+begin
+    while (1 == 1) do
+        temp = exposcall ("Write", -2,  "Login :");
+        temp = exposcall ("Read" , -1,  userName);
+        temp = exposcall ("Write", -2,  "Pass  :");
+        temp = exposcall ("Read" , -1,  userPswd);
+        temp = exposcall ("Login", userName, userPswd);
+        if (temp == -1) then
+            temp = exposcall ("Write", -2, "Inv. Cred.");
+        else 
+        if (temp == -2) then
+            temp = exposcall ("Write", -2, "Denied");
+        endif;
+        endif;
+    endwhile;
+    return 0;
+end
+}
