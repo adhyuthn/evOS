@@ -1,0 +1,77 @@
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = SP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+backup;
+
+alias currentPID R1;
+alias counter R2;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+// ---------Paging stuff-----------
+// 0 - No Paging, 1 - Swap out, 2 - Swap - In.
+
+// Swapping is initiated
+if ([SYSTEM_STATUS_TABLE + 5] > 0) then
+    if (currentPID == SWAPPER_DAEMON && 
+        [SYSTEM_STATUS_TABLE + 5] == SWAP_OUT) then
+        multipush(R1);
+        R2 = currentPID; // R1 is currentPID
+        R1 = SWAP_OUT;
+        call PAGER_MODULE;
+        multipop(R1);
+    else
+    if (currentPID == SWAPPER_DAEMON && 
+        [SYSTEM_STATUS_TABLE + 5] == SWAP_IN) then
+        multipush(R1);
+        R2 = currentPID; // R1 is currentPID
+        R1 = SWAP_IN;
+        call PAGER_MODULE;
+        multipop(R1);
+    endif;
+    endif;
+else
+// Swapping not initiated.
+    // Swap Out : Mem Low
+    if ([SYSTEM_STATUS_TABLE + 2] < MEM_LOW) then
+        [SYSTEM_STATUS_TABLE + 5] = SWAP_OUT;
+    else
+    // Swap In  : MAX_TICK has passed || Mem high
+        if ([SYSTEM_STATUS_TABLE + 4] > 0) then
+            if ([SYSTEM_STATUS_TABLE + 2] > MEM_HIGH) then
+                [SYSTEM_STATUS_TABLE + 5] = SWAP_IN;
+            endif;
+        else
+            counter = 0;
+            while (counter < MAX_PROC_NUM) do
+                if ([PROCESS_TABLE + counter * 16 + 6] == 1 &&
+                    [PROCESS_TABLE + counter * 16    ] > MAX_TICK) then
+                    [SYSTEM_STATUS_TABLE + 5] = SWAP_IN;
+                    break;
+                endif;
+                counter = counter + 1;
+            endwhile;
+        endif;
+    endif;
+endif;
+// ------------
+
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 4] = READY;
+// Increment all TICKS
+counter = 0;
+while (counter < MAX_PROC_NUM) do
+    [PROCESS_TABLE + counter * 16] = [PROCESS_TABLE + counter * 16] + 1;
+    counter = counter + 1;
+endwhile;
+
+call SCHEDULER;
+
+// ISR finished
+restore;
+
+// Puttting it here, strictly as per timer interrupt handler guideline
+SP = [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13];
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 9] = 0;
+
+ireturn;

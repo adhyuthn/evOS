@@ -1,0 +1,65 @@
+alias currentPID R0;
+alias processTableEntry R1;
+currentPID = [SYSTEM_STATUS_TABLE+1];
+processTableEntry = PROCESS_TABLE + currentPID * 16;
+
+multipush(BP);
+
+[processTableEntry + 12] = SP % 512;
+[processTableEntry + 14] = PTBR;
+[processTableEntry + 15] = PTLR;
+
+alias newPID R3;
+
+// Paging check
+if ([SYSTEM_STATUS_TABLE + 5] != 0) then
+    if ([PROCESS_TABLE + SWAPPER_DAEMON * 16 + 4] == WAIT_DISK) then
+        newPID = IDLE_PROCESS;
+    else
+        newPID = SWAPPER_DAEMON;
+    endif;
+else
+// Use RR to pick a process.
+    newPID = currentPID;
+    while(1) do
+        // 15: Exclude Swapper Daemon
+        newPID = ( newPID + 1 ) % 15;
+        if (newPID == currentPID) then
+            newPID = IDLE_PROCESS;
+            break;
+        else
+            if ([PROCESS_TABLE + newPID * 16 + 6] == 0 && 
+                ([PROCESS_TABLE + newPID * 16 + 4] == CREATED || 
+                [PROCESS_TABLE + newPID * 16 + 4] == READY)) then
+                break;
+            endif;
+        endif;
+    endwhile;
+endif;
+
+processTableEntry = PROCESS_TABLE + newPID * 16;
+PTBR = [processTableEntry + 14];
+PTLR = [processTableEntry + 15];
+[SYSTEM_STATUS_TABLE + 1] = newPID;
+
+//print "--------";
+//print "new:";
+//print newPID;
+//print "prev:";
+//print currentPID;
+//print "--------";
+
+// If CREATED, then process has no history, return directly to the user Stack.
+if([processTableEntry + 4] == CREATED) then
+    SP = [processTableEntry + 13];
+    BP = [[processTableEntry+ 11] * 512];
+    [processTableEntry + 4] = RUNNING;
+    [processTableEntry + 9] = 0;
+	ireturn;
+endif;
+
+SP = [processTableEntry + 11] * 512 + [processTableEntry + 12];
+[processTableEntry + 4] = RUNNING;
+
+multipop(BP);
+return;

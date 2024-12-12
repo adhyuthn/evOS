@@ -1,0 +1,167 @@
+alias functionNum R1;
+print "PAGER_SUMMONED";
+print functionNum;
+
+if (functionNum == SWAP_OUT) then
+    alias argPID R2;
+    alias counter R9;
+    alias swapOutPID R4;
+    // find eligible non-swapped process
+    counter = 3;
+    while (counter < MAX_PROC_NUM) do
+        if ([PROCESS_TABLE + counter * 16 + 6] == 0 && 
+            ([PROCESS_TABLE + counter * 16 + 4] == WAIT_PROCESS ||
+            [PROCESS_TABLE + counter * 16 + 4] == WAIT_SEMAPHORE)) then
+            break;
+        endif;
+        counter = counter + 1;
+    endwhile;
+    swapOutPID = counter;
+    print "NO_PROBS 1";
+    breakpoint;
+    // No eligible processes. Find process having longest TICK
+    if (swapOutPID == MAX_PROC_NUM) then
+        alias maxTICK R5;
+        counter = 3;
+        maxTICK = -1;
+        while (counter < MAX_PROC_NUM) do 
+            if ([PROCESS_TABLE + counter * 16 + 6] == 0) then
+                if ([PROCESS_TABLE + counter * 16 + 4] != RUNNING &&
+                    [PROCESS_TABLE + counter * 16 + 4] != TERMINATED &&
+                    [PROCESS_TABLE + counter * 16 + 4] != ALLOCATED) then
+                    if ([PROCESS_TABLE + counter * 16] > maxTICK) then
+                        maxTICK = [PROCESS_TABLE + counter * 16];
+                        swapOutPID = counter;
+                    endif;
+                endif;
+            endif;
+            counter = counter + 1;
+        endwhile;
+        print "NO_PROBS 2";
+        breakpoint;
+        // No 'TICK' Eligible processes
+        if (maxTICK == -1) then
+            [SYSTEM_STATUS_TABLE + 5] = 0;
+            return;
+        endif;
+    endif;
+
+    // Proceed with eligible processes
+    // Reset TICK -> 0
+    [PROCESS_TABLE + swapOutPID * 16] = 0;
+    // Deallocate Valid Page
+    alias pageTableBase R8;
+    pageTableBase = PAGE_TABLE_BASE + swapOutPID * 20;
+    counter = 2;    // Libraray pages are ignored
+    while (counter < MAX_PROC_NUM) do
+        if ([pageTableBase + counter * 2] != -1) then
+            // Code pages only need to be released. 
+            // Stack and heap needs to be moved using DISK_STORE
+            // Heap requires a check to see if it is shared.
+            if (counter == 2 || counter == 3 || 
+                counter == 8 || counter == 9) then
+                if (counter < 4 && [MEMORY_FREE_LIST + [pageTableBase + counter * 2]] != 1) then
+                    counter = counter + 1;
+                    continue;
+                endif;
+            else
+                // Exlusive to heap and stack
+                multipush(R2, R4, R8, R9);
+                R1 = GET_SWAP_BLOCK;
+                call MEMORY_MANAGER;
+                multipop(R2, R4, R8, R9);
+                [DISK_MAP_TABLE + swapOutPID * 10 + counter] = R0;
+                multipush(R2, R4, R8, R9);
+                R1 = DISK_STORE;
+                R2 = argPID;
+                R3 = [pageTableBase + counter * 2];
+                R4 = R0;
+                call DEVICE_MANAGER;
+                multipop(R2, R4, R8, R9);
+            endif;
+            // Applicalbe to all
+            multipush(R2,  R4, R8, R9);
+            R1 = RELEASE_PAGE;
+            R2 = [pageTableBase + counter * 2];
+            call MEMORY_MANAGER;
+            multipop(R2, R4, R8, R9);
+            [pageTableBase + counter * 2    ] = -1;
+            [pageTableBase + counter * 2 + 1] = "0000";
+        endif;
+        counter = counter + 1;
+    endwhile;
+    print "NO_PROBS 3";
+    [PROCESS_TABLE + swapOutPID * 16 + 6] = 1;
+    [SYSTEM_STATUS_TABLE + 5] = 0;
+    [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] + 1;
+    return;
+endif;
+
+if (functionNum == SWAP_IN) then
+    alias argPID R2;
+    alias counter R9;
+    alias swapInPID R4;
+    alias maxTICK R5;
+    // Find process with highest TICK
+    counter = 3;
+    maxTICK = -1;
+    while (counter < MAX_PROC_NUM) do 
+        if ([PROCESS_TABLE + counter * 16 + 4] == READY &&
+            [PROCESS_TABLE + counter * 16 + 6] == 1) then
+            if ([PROCESS_TABLE + counter * 16] > maxTICK) then
+                maxTICK = [PROCESS_TABLE + counter * 16];
+                swapInPID = counter;
+            endif;
+        endif;
+        counter = counter + 1;
+    endwhile;
+    print "NO_PROBS 4";
+    // No such process found (READY STATE)
+    if (maxTICK == -1) then
+        [SYSTEM_STATUS_TABLE + 5] = 0;
+        return;
+    endif;
+    // Proceed with eligible processes
+    // Reset TICK -> 0
+    [PROCESS_TABLE + swapInPID * 16] = 0;
+    // Reallocate Pages 
+    alias swapDiskBlock R5;
+    alias newSwapInPage R6;
+    counter = 2;
+    while (counter < MAX_PROC_PAGES) do 
+        // Code blocks are handled b exhandler. Only heap and stack are handled here.
+        if ([DISK_MAP_TABLE + swapInPID * 10 + counter] != -1) then
+            if (counter == 2 || counter == 3 ||
+                counter == 8 || counter == 9) then
+                swapDiskBlock = [DISK_MAP_TABLE + swapInPID * 10 + counter];
+                multipush(R2, R4, R5, R9);
+                R1 = GET_FREE_PAGE;
+                call MEMORY_MANAGER;
+                multipop(R2, R4, R5, R9);
+                newSwapInPage = R0;
+                multipush(R2, R4, R5, R6, R9);
+                R1 = DISK_LOAD;
+                R2 = argPID;
+                R3 = newSwapInPage;
+                R4 = swapDiskBlock;
+                call DEVICE_MANAGER;
+                multipop(R2, R4, R5, R6, R9);
+                multipush(R2, R4, R5, R6, R9);
+                R1 = RELEASE_BLOCK;
+                R3 = argPID;    // R2 is argPID
+                R2 = swapDiskBlock;
+                call MEMORY_MANAGER;
+                multipop(R2, R4, R5, R6, R9);
+                [DISK_MAP_TABLE + swapInPID * 10 + counter] = -1;
+                [PROCESS_TABLE + swapInPID * 16 + counter * 2    ] = newSwapInPage;
+                [PROCESS_TABLE + swapInPID * 16 + counter * 2 + 1] = "0110";
+            endif;
+        endif;
+        counter = counter + 1;
+    endwhile;
+    print "NO_PROBS 5";
+    [PROCESS_TABLE + swapInPID * 16 + 6] = 0;
+    [SYSTEM_STATUS_TABLE + 5] = 0;
+    [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] - 1;
+    return;
+endif;

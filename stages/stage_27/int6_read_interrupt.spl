@@ -1,0 +1,124 @@
+// Change MODE to Read.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 7;
+
+alias userSP R11;
+userSP=SP;
+
+// Store SP in UPTR
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = userSP;
+
+// Switcht to the kernel stack of the process
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+// In Kernel mode. Do manual HAT
+alias currentPID R1;
+alias fileDescriptor R2;
+alias physicalAddrRetVal R3;
+fileDescriptor=[[PTBR + 2 * ((userSP - 4)/ 512)] * 512 + (userSP - 4) % 512 ];
+physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+
+// Read from non-terminal
+if (fileDescriptor != -1) then
+    if (fileDescriptor >= 0 && 
+        fileDescriptor <= 7) then
+        alias perProcessBase R4;
+        alias oftIndex R5;
+        alias inodeIndex R6;
+        perProcessBase = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + RESOURCE_TABLE_OFFSET;
+        if ([perProcessBase + fileDescriptor * 2] != FILE) then
+            [physicalAddrRetVal] = -1;
+            goto Exit_Interrupt;
+        endif;
+        oftIndex = [perProcessBase + fileDescriptor * 2 + 1];
+        inodeIndex = [OPEN_FILE_TABLE + oftIndex * 4 ];
+        // ACQUIRE_INODE
+        multipush(R1, R2, R3, R4, R5, R6, R11);
+        R3 = currentPID; // currentPID is R1
+        R2 = inodeIndex;
+        R1 = ACQUIRE_INODE;
+        call RESOURCE_MANAGER;
+        multipop(R1, R2, R3, R4, R5, R6, R11);
+        if (R0 == -1) then
+            [physicalAddrRetVal] = -1;
+            goto Exit_Interrupt;
+        endif;
+        alias lseek R7;
+        alias physicalAddrBuffer R8;
+        lseek = OPEN_FILE_TABLE + oftIndex * 4 + 2;
+        // HAT Twice, the address is logical
+        physicalAddrBuffer = [([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512)];
+        physicalAddrBuffer = ([PTBR + 2 * (physicalAddrBuffer / 512)] * 512) + (physicalAddrBuffer % 512);
+
+        // if file is root
+        if (inodeIndex == INODE_ROOT) then
+            // if seek has reached the end
+            if ([lseek] == 480) then
+                multipush(R11, R3);
+                R3 = currentPID; /// currentPID is R1
+                R2 = inodeIndex;
+                R1 = RELEASE_INODE;
+                call RESOURCE_MANAGER;
+                multipop(R11, R3);
+                [physicalAddrRetVal] = -2;
+                goto Exit_Interrupt;
+            endif;
+            [physicalAddrBuffer] = [ROOT_FILE + [lseek]];
+            [lseek] = [lseek] + 1;
+        else
+            // if seek has reached the end
+            if ([lseek] == [INODE_TABLE + inodeIndex * 16 + 2]) then
+                multipush(R11, R3);
+                R3 = currentPID; // currentPID is R1
+                R2 = inodeIndex;
+                R1 = RELEASE_INODE;
+                call RESOURCE_MANAGER;
+                multipop(R11, R3);
+                [physicalAddrRetVal] = -2;
+                goto Exit_Interrupt;
+            endif;
+            // Get disk block info corresponding to lseek
+            alias lseekBlockNum R9;
+            alias lseekBlockOff R10;
+            lseekBlockNum = [INODE_TABLE + inodeIndex * 16 + 8 + ([lseek] / 512)];
+            lseekBlockOff = [lseek] % 512;
+            // Finally, do some READ!
+            multipush(R1, R2,  R3, R4, R5, R6, R7, R8, R9, R10, R11);
+            R1 = BUFFERED_READ;
+            R2 = lseekBlockNum;
+            R3 = lseekBlockOff;
+            R4 = physicalAddrBuffer;
+            call FILE_MANAGER;
+            multipop(R1, R2,  R3, R4, R5, R6, R7, R8, R9, R10, R11);
+            [lseek] = [lseek] + 1;
+        endif;
+        multipush(R1, R2,  R3, R4, R5, R6, R7, R8, R9, R10, R11);
+        R3 = currentPID;  // currentPID is R1
+        R2 = inodeIndex;
+        R1 = RELEASE_INODE;
+        call RESOURCE_MANAGER;
+        multipop(R1, R2,  R3, R4, R5, R6, R7, R8, R9, R10, R11);
+        [physicalAddrRetVal] = 0;
+        goto Exit_Interrupt;
+    else 
+        [physicalAddrRetVal] = -1;
+        goto Exit_Interrupt;
+    endif;
+else
+    // Read from terminal
+    multipush(R11, R1, R2, R3);
+    R2 = currentPID;
+    R1 = TERMINAL_READ;
+    // logical Address of Word- Read Stage INstruction
+    R3 = [([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512)];
+    call DEVICE_MANAGER;
+    multipop(R11, R1, R2, R3);
+    [physicalAddrRetVal] = 0;
+    goto Exit_Interrupt;
+endif;
+
+Exit_Interrupt:
+SP = userSP;
+//MODE FLAG
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+ireturn;
