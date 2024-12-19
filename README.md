@@ -40,5 +40,5 @@ eXpOS is an attempt to create an operting system from scratch for a hypothetical
 - [x] [Stage 24](https://github.com/adhyuthn/evOS/tree/main/stages/stage_24) : File Read (12 Hours)
 - [x] [Stage 25](https://github.com/adhyuthn/evOS/tree/main/stages/stage_25) : File Write (12 Hours)
 - [x] [Stage 26](https://github.com/adhyuthn/evOS/tree/main/stages/stage_26) : User Management (12 Hours)
-- [ ] [Stage 27]() : Pager Module (18 Hours)
+- [x] [Stage 27]() : Pager Module (18 Hours)
 - [ ] [Stage 28]() : Multi-Core Extension (12 Hours)
